@@ -2,8 +2,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Home } from 'lucide-react';
+import { cn } from '@/lib/utils'; // Import cn if needed for conditional classes
 
 export function Header() {
+  // Example: Add logic here if needed to conditionally show/hide Login/Signup
+  const isLoggedIn = false; // Placeholder: Replace with actual auth state check
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -27,15 +31,17 @@ export function Header() {
             >
               List Your Property
             </Link>
+             {/* Add other desktop nav links here if needed */}
           </nav>
         </div>
-        {/* Mobile Nav */}
+
+        {/* Mobile Nav Trigger */}
         <Sheet>
           <SheetTrigger asChild>
              <Button
                variant="ghost"
                size="icon"
-               className="inline-flex md:hidden mr-2"
+               className="inline-flex md:hidden mr-2" // Show only on mobile
              >
                <Menu className="h-5 w-5" />
                <span className="sr-only">Toggle Menu</span>
@@ -44,35 +50,69 @@ export function Header() {
           <SheetContent side="left" className="pr-0">
              <Link
               href="/"
-              className="flex items-center space-x-2 mb-6"
+              className="flex items-center space-x-2 mb-6 pl-6" // Added padding to align with items below
             >
               <Home className="h-6 w-6 text-primary" />
               <span className="font-bold">CribDirect</span>
             </Link>
-            <div className="flex flex-col space-y-4 pl-6">
-               <Link href="/listings" className="text-sm">
+            <nav className="flex flex-col space-y-3 pl-6"> {/* Changed to nav, adjusted spacing */}
+               <Link href="/listings" className="text-sm hover:text-primary transition-colors">
                  Browse Listings
                </Link>
-               <Link href="/landlord/register" className="text-sm">
+               <Link href="/landlord/register" className="text-sm hover:text-primary transition-colors">
                  List Your Property
                </Link>
-               <Link href="/register" className="text-sm">
-                 Sign Up
-               </Link>
-                <Link href="/login" className="text-sm">
-                 Login
-               </Link>
-            </div>
+               {/* Add other mobile nav links here */}
+               <hr className="my-2 border-border" /> {/* Separator */}
+               {!isLoggedIn ? (
+                 <>
+                   <Link href="/register" className="text-sm hover:text-primary transition-colors">
+                     Sign Up
+                   </Link>
+                   <Link href="/login" className="text-sm hover:text-primary transition-colors">
+                     Login
+                   </Link>
+                 </>
+               ) : (
+                 <>
+                    {/* Add authenticated user links here (e.g., Dashboard, Logout) */}
+                    <Link href="/dashboard" className="text-sm hover:text-primary transition-colors">
+                      My Dashboard
+                    </Link>
+                    <Button variant="ghost" className="text-sm justify-start px-0 h-auto py-0 font-normal hover:text-primary transition-colors">
+                      Logout {/* TODO: Implement logout functionality */}
+                    </Button>
+                 </>
+               )}
+            </nav>
           </SheetContent>
         </Sheet>
-         {/* Desktop Right Side */}
-        <div className="flex flex-1 items-center justify-end space-x-2">
-           <Button variant="ghost" asChild className="hidden md:inline-flex">
-             <Link href="/login">Login</Link>
-           </Button>
-          <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
-             <Link href="/register">Sign Up</Link>
-           </Button>
+
+         {/* Spacer to push right-side items */}
+         <div className="flex-1 md:hidden" />
+
+         {/* Desktop Right Side Auth Buttons */}
+        <div className="hidden md:flex flex-1 items-center justify-end space-x-2">
+           {!isLoggedIn ? (
+             <>
+               <Button variant="ghost" asChild>
+                 <Link href="/login">Login</Link>
+               </Button>
+               <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                 <Link href="/register">Sign Up</Link>
+               </Button>
+             </>
+           ) : (
+              <>
+                {/* Add authenticated user buttons here (e.g., Profile, Logout) */}
+                 <Button variant="ghost" asChild>
+                   <Link href="/dashboard">Dashboard</Link>
+                 </Button>
+                 <Button variant="outline">
+                   Logout {/* TODO: Implement logout functionality */}
+                 </Button>
+              </>
+           )}
         </div>
       </div>
     </header>
