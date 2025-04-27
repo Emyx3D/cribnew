@@ -26,7 +26,7 @@ Follow these instructions to set up the project locally for development.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/Emyx3D/studio.git
+    git clone https://github.com/Emyx3D/cribdirect.git
     cd cribdirect-app # Or your project directory name
     ```
 

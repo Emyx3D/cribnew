@@ -1,5 +1,5 @@
 
-'use client'; // Make this a client component to fetch ads
+'use client'; // Make this a client component to fetch ads and properties
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { CheckCircle, UserCheck, Search, Loader2 } from 'lucide-react'; // Added Loader2
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel" // Import ShadCN Carousel
+import Autoplay from "embla-carousel-autoplay" // Import Autoplay plugin
+
 
 // Define Advertisement type (should match ManageAdvertsTable)
 type Advertisement = {
@@ -18,6 +27,13 @@ type Advertisement = {
   status: 'active' | 'inactive';
   createdAt: Date;
 };
+
+// Define Recent Property type for Carousel
+type RecentProperty = {
+    id: number | string;
+    title: string;
+    imageUrl: string;
+}
 
 // Mock function to fetch active ads for the landing page
 // TODO: Replace with actual API call
@@ -45,17 +61,59 @@ async function fetchLandingPageAds(): Promise<Advertisement[]> {
      ];
 }
 
+// Mock function to fetch recent properties for the carousel
+// TODO: Replace with actual API call
+async function fetchRecentProperties(): Promise<RecentProperty[]> {
+    console.log("Fetching recent properties for carousel...");
+    await new Promise(resolve => setTimeout(resolve, 600)); // Simulate delay
+    // Return mock data (e.g., last 3-4 listings from listings page data)
+     return [
+        {
+            id: 4,
+            title: "Family Duplex with Garden",
+            imageUrl: "https://picsum.photos/seed/house4_compound/600/400",
+        },
+         {
+            id: 1,
+            title: "Spacious 3 Bedroom Apartment",
+            imageUrl: "https://picsum.photos/seed/house1_livingroom/600/400",
+        },
+         {
+            id: 'landlord_prop1',
+            title: "My Spacious 3 Bedroom Apartment",
+            imageUrl: "https://picsum.photos/seed/my_house1_exterior/600/400",
+        },
+        {
+            id: 2,
+            title: "Cozy 2 Bedroom Flat",
+            imageUrl: "https://picsum.photos/seed/house2_bedroom/600/400",
+        },
+    ];
+}
+
 
 export default function Home() {
     const [ads, setAds] = useState<Advertisement[]>([]);
     const [isLoadingAds, setIsLoadingAds] = useState(true);
+    const [recentProperties, setRecentProperties] = useState<RecentProperty[]>([]);
+    const [isLoadingProperties, setIsLoadingProperties] = useState(true);
+
 
     useEffect(() => {
+        // Fetch Ads
         setIsLoadingAds(true);
         fetchLandingPageAds()
             .then(data => setAds(data))
             .catch(err => console.error("Failed to load landing page ads:", err))
             .finally(() => setIsLoadingAds(false));
+
+        // Fetch Recent Properties
+        setIsLoadingProperties(true);
+        fetchRecentProperties()
+            .then(data => setRecentProperties(data))
+            .catch(err => console.error("Failed to load recent properties:", err))
+            .finally(() => setIsLoadingProperties(false));
+
     }, []);
 
 
@@ -80,16 +138,57 @@ export default function Home() {
             </Button>
           </div>
         </div>
-        <div className="lg:w-1/2 flex justify-center">
-           <Image
-            src="https://picsum.photos/seed/hero_house/600/400" // Updated placeholder image
-            alt="Happy family in front of a house"
-            width={600}
-            height={400}
-            className="rounded-lg shadow-xl object-cover"
-            priority // Load image sooner
-            unoptimized // Added for picsum consistency
-           />
+        {/* Carousel Section */}
+        <div className="lg:w-1/2 flex justify-center items-center min-h-[300px] md:min-h-[400px]">
+           {isLoadingProperties ? (
+                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
+           ) : recentProperties.length > 0 ? (
+                 <Carousel
+                    opts={{
+                       align: "start",
+                       loop: true,
+                     }}
+                    plugins={[
+                       Autoplay({ // Add Autoplay plugin
+                         delay: 4000, // Change slide every 4 seconds
+                         stopOnInteraction: true, // Stop autoplay on user interaction
+                       }),
+                    ]}
+                    className="w-full max-w-lg" // Adjust width as needed
+                    >
+                    <CarouselContent>
+                        {recentProperties.map((property) => (
+                            <CarouselItem key={property.id}>
+                               <div className="p-1">
+                                  <Card className="overflow-hidden">
+                                    <CardContent className="flex aspect-video items-center justify-center p-0 relative"> {/* Maintain aspect ratio */}
+                                       <Image
+                                          src={property.imageUrl}
+                                          alt={property.title}
+                                          fill // Use fill to cover the container
+                                          className="object-cover rounded-lg shadow-xl" // Ensure image covers
+                                          priority={property.id === recentProperties[0].id} // Prioritize the first image
+                                          unoptimized // For picsum consistency
+                                       />
+                                       {/* Optional: Add property title overlay */}
+                                       {/* <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white p-2 text-center text-sm">
+                                           {property.title}
+                                       </div> */}
+                                    </CardContent>
+                                  </Card>
+                               </div>
+                            </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10" />
+                    <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
+                 </Carousel>
+           ) : (
+                // Fallback if no properties are loaded
+                <div className="w-full h-[400px] bg-muted rounded-lg flex items-center justify-center">
+                    <p className="text-muted-foreground">No recent properties to display.</p>
+                 </div>
+           )}
         </div>
       </section>
 
