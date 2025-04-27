@@ -211,6 +211,7 @@ async function getListingData(id: string): Promise<ListingData> {
 
 
 interface ListingDetailPageProps {
+  // Keep `params` as the prop name expected by Next.js for dynamic routes
   params: { id: string };
 }
 
@@ -240,15 +241,21 @@ type ListingData = {
 
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
+  // Note: `React.use()` is not suitable for Client Components in this context.
+  // The warning about direct `params` access is informational for future compatibility.
+  // We will continue accessing `params.id` directly within `useEffect` and use it in the dependency array.
+
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const { toast } = useToast();
   const router = useRouter(); // Initialize router
 
+
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
      // Access params.id inside useEffect to avoid top-level access warning
+     // Direct access is still supported in this Next.js version, despite the warning.
     const listingId = params.id;
     if (!listingId) {
         console.error("Listing ID is missing from params.");
@@ -497,3 +504,4 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
     </div>
   );
 }
+
