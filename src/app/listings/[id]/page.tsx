@@ -1,4 +1,5 @@
 
+
 'use client'; // Add 'use client' directive
 
 import React, { useState, useEffect } from 'react'; // Import React, useState, useEffect
@@ -239,7 +240,6 @@ type ListingData = {
 
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
-
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
@@ -279,7 +279,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [params.id, router, toast]); // Use params.id directly in dependency array
+  }, [params.id, router, toast]); // Correctly pass params.id
 
 
   const handleRequestInspection = () => {
