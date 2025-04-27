@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle, UserCheck, Search, Loader2 } from 'lucide-react'; // Added Loader2
+import { CheckCircle, UserCheck, Search, Loader2, MapPin } from 'lucide-react'; // Added Loader2, MapPin
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
@@ -32,6 +32,7 @@ type Advertisement = {
 type RecentProperty = {
     id: number | string;
     title: string;
+    location: string; // Added location
     imageUrl: string;
 }
 
@@ -71,21 +72,25 @@ async function fetchRecentProperties(): Promise<RecentProperty[]> {
         {
             id: 4,
             title: "Family Duplex with Garden",
+            location: "Magodo Phase 2, Lagos", // Added location
             imageUrl: "https://picsum.photos/seed/house4_compound/600/400",
         },
          {
             id: 1,
             title: "Spacious 3 Bedroom Apartment",
+            location: "Lekki Phase 1, Lagos", // Added location
             imageUrl: "https://picsum.photos/seed/house1_livingroom/600/400",
         },
          {
             id: 'landlord_prop1',
             title: "My Spacious 3 Bedroom Apartment",
+            location: "Lekki Phase 1, Lagos", // Added location
             imageUrl: "https://picsum.photos/seed/my_house1_exterior/600/400",
         },
         {
             id: 2,
             title: "Cozy 2 Bedroom Flat",
+            location: "Yaba, Lagos", // Added location
             imageUrl: "https://picsum.photos/seed/house2_bedroom/600/400",
         },
     ];
@@ -139,7 +144,7 @@ export default function Home() {
           </div>
         </div>
         {/* Carousel Section */}
-        <div className="lg:w-1/2 flex justify-center items-center min-h-[300px] md:min-h-[400px]">
+        <div className="lg:w-1/2 flex justify-center items-center min-h-[350px] md:min-h-[450px] lg:min-h-[500px]"> {/* Increased min-height */}
            {isLoadingProperties ? (
                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
            ) : recentProperties.length > 0 ? (
@@ -154,34 +159,41 @@ export default function Home() {
                          stopOnInteraction: true, // Stop autoplay on user interaction
                        }),
                     ]}
-                    className="w-full max-w-lg" // Adjust width as needed
+                    className="w-full max-w-xl" // Increased max-width
                     >
                     <CarouselContent>
-                        {recentProperties.map((property) => (
+                        {recentProperties.map((property, index) => (
                             <CarouselItem key={property.id}>
                                <div className="p-1">
-                                  <Card className="overflow-hidden">
-                                    <CardContent className="flex aspect-video items-center justify-center p-0 relative"> {/* Maintain aspect ratio */}
-                                       <Image
-                                          src={property.imageUrl}
-                                          alt={property.title}
-                                          fill // Use fill to cover the container
-                                          className="object-cover rounded-lg shadow-xl" // Ensure image covers
-                                          priority={property.id === recentProperties[0].id} // Prioritize the first image
-                                          unoptimized // For picsum consistency
-                                       />
-                                       {/* Optional: Add property title overlay */}
-                                       {/* <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white p-2 text-center text-sm">
-                                           {property.title}
-                                       </div> */}
+                                  <Card className="overflow-hidden shadow-md">
+                                    <CardContent className="flex flex-col items-center justify-center p-0"> {/* Changed layout to column */}
+                                       <div className="relative w-full h-[400px] md:h-[450px]"> {/* Increased height for the image container */}
+                                           <Image
+                                              src={property.imageUrl}
+                                              alt={property.title}
+                                              fill // Use fill to cover the container
+                                              className="object-cover rounded-t-lg" // Ensure image covers, rounded top only
+                                              priority={index === 0} // Prioritize the first image
+                                              unoptimized // For picsum consistency
+                                           />
+                                       </div>
+                                        {/* Title and Location below the image */}
+                                       <div className="p-4 w-full bg-background rounded-b-lg">
+                                           <Link href={`/listings/${property.id}`} className="hover:underline">
+                                               <p className="font-semibold text-lg truncate">{property.title}</p>
+                                           </Link>
+                                           <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
+                                               <MapPin className="w-4 h-4 shrink-0"/> {property.location}
+                                           </p>
+                                       </div>
                                     </CardContent>
                                   </Card>
                                </div>
                             </CarouselItem>
                         ))}
                     </CarouselContent>
-                    <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10" />
-                    <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
+                    <CarouselPrevious className="absolute left-[-10px] sm:left-2 top-1/2 -translate-y-1/2 z-10 bg-background/50 hover:bg-background/80" /> {/* Adjusted positioning and background */}
+                    <CarouselNext className="absolute right-[-10px] sm:right-2 top-1/2 -translate-y-1/2 z-10 bg-background/50 hover:bg-background/80" /> {/* Adjusted positioning and background */}
                  </Carousel>
            ) : (
                 // Fallback if no properties are loaded
