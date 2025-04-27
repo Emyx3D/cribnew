@@ -36,10 +36,10 @@ type UserRole = 'admin' | 'landlord' | 'tenant' | null;
 type VerificationStatus = 'verified' | 'pending' | 'rejected' | null; // Added verification status
 
 // Hardcoded credentials for simulation
-const adminCredentials = { email: 'Admin@cribdirect.com', password: 'Pass=1010', role: 'admin' as UserRole };
+const adminCredentials = { email: 'Admin@cribdirect.com', password: 'Pass=1010', role: 'admin' as UserRole, name: "Admin User" };
 // Simulate landlord verification status
-const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' as UserRole, status: 'verified' as VerificationStatus };
-const tenantCredentials = { email: 'user@test.com', password: 'Pass=1010', role: 'tenant' as UserRole };
+const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' as UserRole, status: 'verified' as VerificationStatus, name: "Test Landlord" };
+const tenantCredentials = { email: 'user@test.com', password: 'Pass=1010', role: 'tenant' as UserRole, name: "Test User" };
 
 
 export default function LoginPage() {
@@ -53,6 +53,7 @@ export default function LoginPage() {
         sessionStorage.removeItem('userRole');
         sessionStorage.removeItem('isLoggedIn');
         sessionStorage.removeItem('landlordVerificationStatus'); // Clear verification status too
+        sessionStorage.removeItem('userName'); // Clear user name
      } catch (error) {
         console.error("Error clearing sessionStorage:", error);
         // Non-critical error, maybe log it
@@ -78,23 +79,27 @@ export default function LoginPage() {
     let loginSuccess = false;
     let userRole: UserRole = null;
     let landlordStatus: VerificationStatus = null; // Add variable for landlord status
+    let userName: string | null = null; // Variable to store user name
     let redirectPath = '/';
 
     // Check against hardcoded credentials
     if (values.email === adminCredentials.email && values.password === adminCredentials.password) {
         loginSuccess = true;
         userRole = adminCredentials.role;
+        userName = adminCredentials.name;
         redirectPath = '/admin/dashboard';
         console.log("Admin login simulated");
     } else if (values.email === landlordCredentials.email && values.password === landlordCredentials.password) {
       loginSuccess = true;
       userRole = landlordCredentials.role;
       landlordStatus = landlordCredentials.status; // Get landlord status
+      userName = landlordCredentials.name;
       redirectPath = '/landlord/dashboard'; // Redirect landlord to their dashboard
       console.log("Landlord login simulated with status:", landlordStatus);
     } else if (values.email === tenantCredentials.email && values.password === tenantCredentials.password) {
       loginSuccess = true;
       userRole = tenantCredentials.role;
+      userName = tenantCredentials.name;
       redirectPath = '/listings'; // Redirect tenant to listings page
       console.log("Tenant login simulated");
     }
@@ -104,6 +109,10 @@ export default function LoginPage() {
       try {
          sessionStorage.setItem('isLoggedIn', 'true');
          sessionStorage.setItem('userRole', userRole);
+         if (userName) {
+             sessionStorage.setItem('userName', userName); // Store user's name
+             console.log("Stored user name:", userName);
+         }
          // Store verification status only if the user is a landlord
          if (userRole === 'landlord' && landlordStatus) {
              sessionStorage.setItem('landlordVerificationStatus', landlordStatus);
@@ -125,7 +134,7 @@ export default function LoginPage() {
 
       toast({
         title: "Login Successful!",
-        description: `Welcome back ${userRole}. Redirecting...`,
+        description: `Welcome back, ${userName || userRole}! Redirecting...`,
       });
       form.reset();
 
@@ -144,7 +153,7 @@ export default function LoginPage() {
       });
       setIsLoading(false); // Stop loading indicator on failure
     }
-  } // <-- Added missing closing brace here
+  }
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">

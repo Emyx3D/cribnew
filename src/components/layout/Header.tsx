@@ -1,12 +1,22 @@
+
 'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, ShieldCheck, LogOut, User, LayoutDashboard } from 'lucide-react'; // Removed unused ArrowLeft
+import { Menu, Home, ShieldCheck, LogOut, User, LayoutDashboard, Settings } from 'lucide-react'; // Added Settings icon
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar for user icon
 
 
 // Type for user role
@@ -16,6 +26,7 @@ type UserRole = 'admin' | 'landlord' | 'tenant' | null;
 const useAuth = () => {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
    const [userRole, setUserRole] = useState<UserRole>(null);
+    const [userName, setUserName] = useState<string | null>(null); // Added state for user name
    const [isMounted, setIsMounted] = useState(false); // Track if component is mounted
 
    useEffect(() => {
@@ -24,15 +35,18 @@ const useAuth = () => {
      try {
        const loggedInStatus = sessionStorage.getItem('isLoggedIn') === 'true';
        const role = sessionStorage.getItem('userRole') as UserRole;
+       const name = sessionStorage.getItem('userName'); // Get user name
 
        setIsLoggedIn(loggedInStatus);
        setUserRole(loggedInStatus ? role : null);
-       console.log("useAuth: Session state read", { loggedInStatus, role });
+       setUserName(loggedInStatus ? name : null); // Set user name if logged in
+       console.log("useAuth: Session state read", { loggedInStatus, role, name });
      } catch (error) {
         console.error("useAuth: Could not access sessionStorage:", error);
         // Set default non-logged-in state if storage access fails
         setIsLoggedIn(false);
         setUserRole(null);
+        setUserName(null);
      }
    }, []); // Run only once on mount
 
@@ -41,28 +55,46 @@ const useAuth = () => {
       try {
          const loggedInStatus = sessionStorage.getItem('isLoggedIn') === 'true';
          const role = sessionStorage.getItem('userRole') as UserRole;
+         const name = sessionStorage.getItem('userName'); // Get user name
          setIsLoggedIn(loggedInStatus);
          setUserRole(loggedInStatus ? role : null);
+         setUserName(loggedInStatus ? name : null); // Set user name if logged in
       } catch(error) {
          console.error("useAuth: Failed to update auth state manually:", error);
       }
    };
 
-   return { isLoggedIn, userRole, isMounted, updateAuthState }; // Return isMounted and update function
+   return { isLoggedIn, userRole, userName, isMounted, updateAuthState }; // Return isMounted, update function, and userName
+};
+
+// Helper to get initials
+const getInitials = (name?: string | null) => {
+    if (!name) return 'U'; // Default to 'U' for User
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 };
 
 export function Header() {
-  const { isLoggedIn, userRole, isMounted, updateAuthState } = useAuth(); // Get isMounted and update function
+  const { isLoggedIn, userRole, userName, isMounted, updateAuthState } = useAuth(); // Get userName
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // State for mobile menu
 
   // Re-check auth state when route changes (useful after login/logout redirects)
   useEffect(() => {
+    const handleRouteChange = () => {
+      if (isMounted) {
+        updateAuthState();
+      }
+    };
+    // Listen to route changes - This requires a more robust solution than just relying on router object
+    // Using router.refresh() after login/logout is generally more reliable for App Router
+    // For now, we'll rely on the initial mount check and manual updates
+
+    // Re-check on mount just in case sessionStorage updated before mount finished
     if (isMounted) {
-       updateAuthState();
+        updateAuthState();
     }
-    // Adding router dependency is complex, router.refresh() should handle this better
-  }, [isMounted, router]); // updateAuthState reference doesn't change
+
+  }, [isMounted, router, updateAuthState]);
 
   // Simulated logout function
   const handleLogout = () => {
@@ -72,6 +104,7 @@ export function Header() {
        sessionStorage.removeItem('landlordVerificationStatus');
        sessionStorage.removeItem('landlordConversations');
        sessionStorage.removeItem('landlordUnreadCount');
+       sessionStorage.removeItem('userName'); // Remove username on logout
        console.log('handleLogout: Session storage cleared.');
     } catch (error) {
        console.error("handleLogout: Could not clear sessionStorage:", error);
@@ -80,7 +113,7 @@ export function Header() {
     updateAuthState();
     // Redirect to login or home page after logout
     router.push('/login');
-    // router.refresh(); // Force refresh to update server components and potentially re-run useAuth
+    router.refresh(); // Force refresh to update server components and potentially re-run useAuth
   };
 
   const isAdmin = userRole === 'admin';
@@ -123,6 +156,9 @@ export function Header() {
      setMobileMenuOpen(false);
   }
 
+  // Define dashboard link based on role
+   const dashboardLink = isAdmin ? "/admin/dashboard" : isLandlord ? "/landlord/dashboard" : "/"; // Tenants don't have a separate dashboard currently
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -141,6 +177,7 @@ export function Header() {
             >
               Browse Listings
             </Link>
+             {/* Show "List Your Property" only if not logged in OR if logged in as landlord */}
              {(!isLoggedIn || isLandlord) && (
                 <Link
                   href={isLandlord ? "/landlord/dashboard/listings/new" : "/landlord/register"}
@@ -149,33 +186,16 @@ export function Header() {
                   List Your Property
                 </Link>
             )}
-            {/* Dashboard links */}
-            {isLoggedIn && isAdmin && (
-                 <Link
-                   href="/admin/dashboard"
-                   className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
-                 >
-                    <ShieldCheck className="h-4 w-4 mr-1" />
-                    Admin
-                 </Link>
-            )}
-             {isLoggedIn && isLandlord && (
-                 <Link
-                   href="/landlord/dashboard"
-                   className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
-                 >
-                    <LayoutDashboard className="h-4 w-4 mr-1" />
-                    Landlord
-                 </Link>
-            )}
-             {isLoggedIn && isTenant && (
-                 <Link
-                   href="/tenant/dashboard" // TODO: Create tenant dashboard page
-                   className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
-                 >
-                    <User className="h-4 w-4 mr-1" />
-                    Tenant
-                 </Link>
+             {/* Show Dashboard link only if logged in as Admin or Landlord */}
+             {(isAdmin || isLandlord) && (
+                <Link
+                    href={dashboardLink}
+                    className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
+                >
+                     {isAdmin && <ShieldCheck className="h-4 w-4 mr-1" />}
+                     {isLandlord && <LayoutDashboard className="h-4 w-4 mr-1" />}
+                    Dashboard
+                </Link>
             )}
           </nav>
         </div>
@@ -215,39 +235,30 @@ export function Header() {
                        List Your Property
                      </Link>
                    )}
+                   {(isAdmin || isLandlord) && ( // Show dashboard link for admin/landlord
+                     <Link href={dashboardLink} onClick={handleLinkClick} className="text-base hover:text-primary transition-colors flex items-center">
+                         {isAdmin && <ShieldCheck className="h-4 w-4 mr-1" />}
+                         {isLandlord && <LayoutDashboard className="h-4 w-4 mr-1" />}
+                         Dashboard
+                     </Link>
+                    )}
                    <hr className="my-2 border-border" />
-
-                   {/* Dashboard links */}
-                   {isLoggedIn && isAdmin && (
-                     <Link href="/admin/dashboard" onClick={handleLinkClick} className="text-base hover:text-primary transition-colors flex items-center">
-                       <ShieldCheck className="h-4 w-4 mr-1" /> Admin Dashboard
-                     </Link>
-                   )}
-                   {isLoggedIn && isLandlord && (
-                     <Link href="/landlord/dashboard" onClick={handleLinkClick} className="text-base hover:text-primary transition-colors flex items-center">
-                       <LayoutDashboard className="h-4 w-4 mr-1" /> Landlord Dashboard
-                     </Link>
-                   )}
-                   {isLoggedIn && isTenant && (
-                     <Link href="/tenant/dashboard" onClick={handleLinkClick} className="text-base hover:text-primary transition-colors flex items-center">
-                       <User className="h-4 w-4 mr-1" /> Tenant Dashboard
-                     </Link>
-                   )}
 
                    {/* Auth Links */}
                    {!isLoggedIn ? (
                      <>
-                       <hr className="my-2 border-border" />
-                       <Link href="/register" onClick={handleLinkClick} className="text-base hover:text-primary transition-colors">
-                         Sign Up
-                       </Link>
                        <Link href="/login" onClick={handleLinkClick} className="text-base hover:text-primary transition-colors">
                          Login
+                       </Link>
+                       <Link href="/register" onClick={handleLinkClick} className="text-base hover:text-primary transition-colors">
+                         Sign Up
                        </Link>
                      </>
                    ) : (
                      <>
-                       <hr className="my-2 border-border" />
+                       <Link href="/profile" onClick={handleLinkClick} className="text-base hover:text-primary transition-colors flex items-center">
+                         <User className="h-4 w-4 mr-1" /> Profile
+                       </Link>
                        <Button variant="ghost" className="text-base justify-start px-0 h-auto py-0 font-normal hover:text-primary transition-colors" onClick={() => { handleLogout(); handleLinkClick(); }}>
                          <LogOut className="h-4 w-4 mr-1" /> Logout
                        </Button>
@@ -265,7 +276,7 @@ export function Header() {
         </div>
 
 
-         {/* Desktop Right Side Auth Buttons */}
+         {/* Desktop Right Side Auth */}
         <div className="hidden md:flex flex-1 items-center justify-end space-x-2">
            {!isLoggedIn ? (
              <>
@@ -278,10 +289,41 @@ export function Header() {
              </>
            ) : (
               <>
-                 {/* Desktop Logout Button */}
-                 <Button variant="outline" onClick={handleLogout}>
-                   <LogOut className="h-4 w-4 mr-1"/> Logout
-                 </Button>
+                 {/* Desktop User Dropdown */}
+                 <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                          <Avatar className="h-8 w-8">
+                            {/* TODO: Add dynamic avatar image source if available */}
+                            {/* <AvatarImage src="/path/to/avatar.png" alt={userName || 'User'} /> */}
+                            <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                          </Avatar>
+                        </Button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuLabel className="font-normal">
+                           <div className="flex flex-col space-y-1">
+                             <p className="text-sm font-medium leading-none">{userName || userRole}</p>
+                             {/* Optional: Add email */}
+                             {/* <p className="text-xs leading-none text-muted-foreground">
+                               {userEmail}
+                             </p> */}
+                           </div>
+                        </DropdownMenuLabel>
+                         <DropdownMenuSeparator />
+                         <DropdownMenuItem asChild className="cursor-pointer">
+                             <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
+                         </DropdownMenuItem>
+                         {/* Optional Settings Link */}
+                         {/* <DropdownMenuItem className="cursor-pointer">
+                             <Settings className="mr-2 h-4 w-4" />Settings
+                         </DropdownMenuItem> */}
+                         <DropdownMenuSeparator />
+                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                             <LogOut className="mr-2 h-4 w-4" /> Logout
+                         </DropdownMenuItem>
+                     </DropdownMenuContent>
+                 </DropdownMenu>
               </>
            )}
         </div>
