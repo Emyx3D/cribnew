@@ -6,7 +6,8 @@ import { LandlordVerificationTable } from "./_components/LandlordVerificationTab
 import { ManageUsersTable } from "./_components/ManageUsersTable";
 import { FlaggedListingsTable } from "./_components/FlaggedListingsTable";
 import { AnalyticsOverview } from "./_components/AnalyticsOverview";
-import { ManageStaffTable } from "./_components/ManageStaffTable"; // Import the new component
+import { ManageStaffTable } from "./_components/ManageStaffTable";
+import { ManageAdvertsTable } from "./_components/ManageAdvertsTable"; // Import the new Adverts component
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -35,11 +36,13 @@ export default function AdminDashboardPage() {
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
       <Tabs defaultValue="verification" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-6"> {/* Updated grid columns */}
+        {/* Adjusted grid columns to accommodate the new tab */}
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 mb-6">
           <TabsTrigger value="verification">Landlord Verification</TabsTrigger>
           <TabsTrigger value="users">Manage Users</TabsTrigger>
           <TabsTrigger value="listings">Flagged Listings</TabsTrigger>
-          <TabsTrigger value="staff">Manage Staff</TabsTrigger> {/* New Tab Trigger */}
+          <TabsTrigger value="staff">Manage Staff</TabsTrigger>
+          <TabsTrigger value="adverts">Adverts</TabsTrigger> {/* New Tab Trigger */}
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -85,7 +88,6 @@ export default function AdminDashboardPage() {
           </Card>
         </TabsContent>
 
-        {/* New Tab Content for Manage Staff */}
         <TabsContent value="staff">
           <Card>
             <CardHeader>
@@ -96,6 +98,21 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <ManageStaffTable />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+         {/* New Tab Content for Adverts */}
+        <TabsContent value="adverts">
+          <Card>
+            <CardHeader>
+              <CardTitle>Manage Advertisements</CardTitle>
+              <CardDescription>
+                Create, edit, and manage ad banners displayed on the landing and listing pages.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ManageAdvertsTable />
             </CardContent>
           </Card>
         </TabsContent>

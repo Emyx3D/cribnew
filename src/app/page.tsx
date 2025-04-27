@@ -1,10 +1,64 @@
+
+'use client'; // Make this a client component to fetch ads
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle, UserCheck, Search } from 'lucide-react';
+import { CheckCircle, UserCheck, Search, Loader2 } from 'lucide-react'; // Added Loader2
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+
+// Define Advertisement type (should match ManageAdvertsTable)
+type Advertisement = {
+  id: string;
+  title: string;
+  imageUrl: string;
+  linkUrl: string;
+  targetPages: ('landing' | 'listings')[];
+  status: 'active' | 'inactive';
+  createdAt: Date;
+};
+
+// Mock function to fetch active ads for the landing page
+// TODO: Replace with actual API call
+async function fetchLandingPageAds(): Promise<Advertisement[]> {
+    console.log("Fetching landing page ads...");
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+    try {
+        const storedAds = localStorage.getItem('cribdirectAds');
+        if (storedAds) {
+            const allAds: Advertisement[] = JSON.parse(storedAds, (key, value) => {
+                if (key === 'createdAt') return new Date(value);
+                return value;
+            });
+            const activeLandingAds = allAds.filter(ad => ad.status === 'active' && ad.targetPages.includes('landing'));
+            console.log("Loaded active landing page ads from localStorage");
+            return activeLandingAds;
+        }
+    } catch (e) {
+        console.error("Could not parse ads from localStorage for landing page", e);
+    }
+     console.log("Using mock landing page ad data (fallback)");
+     // Fallback mock data
+     return [
+         { id: 'ad1', title: 'Summer Promo Banner', imageUrl: 'https://picsum.photos/seed/promo1/900/150', linkUrl: 'https://example.com/promo', targetPages: ['landing'], status: 'active', createdAt: new Date() }
+     ];
+}
+
 
 export default function Home() {
+    const [ads, setAds] = useState<Advertisement[]>([]);
+    const [isLoadingAds, setIsLoadingAds] = useState(true);
+
+    useEffect(() => {
+        setIsLoadingAds(true);
+        fetchLandingPageAds()
+            .then(data => setAds(data))
+            .catch(err => console.error("Failed to load landing page ads:", err))
+            .finally(() => setIsLoadingAds(false));
+    }, []);
+
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -37,6 +91,37 @@ export default function Home() {
            />
         </div>
       </section>
+
+      {/* Ad Banner Section */}
+      <section className="container mx-auto px-4 py-8">
+          {isLoadingAds ? (
+              <div className="flex justify-center items-center h-24 bg-muted rounded-lg">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+          ) : ads.length > 0 ? (
+              <div className="bg-muted p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                  {/* Display the first active ad */}
+                  <Link href={ads[0].linkUrl} target="_blank" rel="noopener noreferrer" title={ads[0].title}>
+                      <Image
+                          src={ads[0].imageUrl}
+                          alt={ads[0].title}
+                          width={1200} // Adjust width as needed for banner
+                          height={150} // Adjust height for banner aspect ratio
+                          className="w-full h-auto object-contain rounded" // object-contain prevents distortion
+                          unoptimized
+                      />
+                  </Link>
+                   {/* Optional: Small text indicating it's an ad */}
+                   {/* <p className="text-xs text-muted-foreground text-right mt-1">Advertisement</p> */}
+              </div>
+          ) : (
+              <div className="h-24 bg-muted rounded-lg flex items-center justify-center">
+                  {/* Placeholder or empty state if no ads */}
+                  {/* <p className="text-muted-foreground text-sm">Ad Space</p> */}
+              </div>
+          )}
+      </section>
+
 
       {/* Features Section */}
       <section className="bg-secondary py-16 md:py-24">

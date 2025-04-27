@@ -1,10 +1,52 @@
+
+'use client'; // Make this a client component to fetch ads
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BedDouble, Bath, MapPin, Wallet, MessageSquare } from 'lucide-react';
+import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2 } from 'lucide-react'; // Added Loader2
 import Image from 'next/image';
 import Link from "next/link";
 import { FilterSidebar } from './_components/FilterSidebar';
+import { useEffect, useState } from 'react';
+
+// Define Advertisement type (should match ManageAdvertsTable)
+type Advertisement = {
+  id: string;
+  title: string;
+  imageUrl: string;
+  linkUrl: string;
+  targetPages: ('landing' | 'listings')[];
+  status: 'active' | 'inactive';
+  createdAt: Date;
+};
+
+// Mock function to fetch active ads for the listings page
+// TODO: Replace with actual API call
+async function fetchListingsPageAds(): Promise<Advertisement[]> {
+    console.log("Fetching listings page ads...");
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+    try {
+        const storedAds = localStorage.getItem('cribdirectAds');
+        if (storedAds) {
+            const allAds: Advertisement[] = JSON.parse(storedAds, (key, value) => {
+                if (key === 'createdAt') return new Date(value);
+                return value;
+            });
+            const activeListingsAds = allAds.filter(ad => ad.status === 'active' && ad.targetPages.includes('listings'));
+            console.log("Loaded active listings page ads from localStorage");
+            return activeListingsAds;
+        }
+    } catch (e) {
+        console.error("Could not parse ads from localStorage for listings page", e);
+    }
+    console.log("Using mock listings page ad data (fallback)");
+    // Fallback mock data
+    return [
+        { id: 'ad2', title: 'New Listings Alert', imageUrl: 'https://picsum.photos/seed/listingsAd/900/150', linkUrl: 'https://example.com/new', targetPages: ['listings'], status: 'active', createdAt: new Date() }
+    ];
+}
+
 
 // Mock data for listings - replace with actual data fetching
 const listings = [
@@ -55,9 +97,51 @@ const listings = [
 ];
 
 export default function ListingsPage() {
+   const [ads, setAds] = useState<Advertisement[]>([]);
+   const [isLoadingAds, setIsLoadingAds] = useState(true);
+
+    useEffect(() => {
+        setIsLoadingAds(true);
+        fetchListingsPageAds()
+            .then(data => setAds(data))
+            .catch(err => console.error("Failed to load listings page ads:", err))
+            .finally(() => setIsLoadingAds(false));
+    }, []);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Available Properties</h1>
+
+        {/* Ad Banner Section */}
+       <div className="mb-8">
+            {isLoadingAds ? (
+                <div className="flex justify-center items-center h-24 bg-muted rounded-lg">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : ads.length > 0 ? (
+                <div className="bg-muted p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    {/* Display the first active ad */}
+                    <Link href={ads[0].linkUrl} target="_blank" rel="noopener noreferrer" title={ads[0].title}>
+                        <Image
+                            src={ads[0].imageUrl}
+                            alt={ads[0].title}
+                            width={1200} // Adjust width as needed for banner
+                            height={150} // Adjust height for banner aspect ratio
+                            className="w-full h-auto object-contain rounded" // object-contain prevents distortion
+                            unoptimized
+                        />
+                    </Link>
+                     {/* Optional: Small text indicating it's an ad */}
+                     {/* <p className="text-xs text-muted-foreground text-right mt-1">Advertisement</p> */}
+                </div>
+            ) : (
+                 <div className="h-24 bg-muted rounded-lg flex items-center justify-center">
+                    {/* Placeholder or empty state if no ads */}
+                    {/* <p className="text-muted-foreground text-sm">Ad Space</p> */}
+                </div>
+            )}
+       </div>
+
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Filters */}
         <FilterSidebar />
