@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -34,19 +34,40 @@ type Conversation = {
 // --- Mock API Functions ---
 // TODO: Replace with actual API calls
 
+// Mock function to simulate fetching conversations (assuming initial state)
 async function fetchConversations(): Promise<Conversation[]> {
     console.log("Fetching conversations...");
     await new Promise(resolve => setTimeout(resolve, 800));
+    // Try reading from sessionStorage first to maintain state across navigations
+    try {
+        const storedConvos = sessionStorage.getItem('landlordConversations');
+        if (storedConvos) {
+            const parsedConvos = JSON.parse(storedConvos, (key, value) => {
+                 // Revive Date objects
+                 if (key === 'timestamp') {
+                    return new Date(value);
+                }
+                return value;
+            });
+            console.log("Loaded conversations from sessionStorage");
+            return parsedConvos;
+        }
+    } catch (e) {
+        console.error("Could not parse conversations from sessionStorage", e);
+    }
+
+    // Fallback to mock data if nothing in storage
+    console.log("No conversations in sessionStorage, using initial mock data");
     return [
         {
             id: 'conv1', tenantId: 'tenant123', tenantName: 'Prospective Tenant A', listingId: 'landlord_prop1', listingTitle: 'My Spacious 3 Bedroom Apartment',
             lastMessage: { id: 'msg1', senderId: 'tenant123', text: "Hello, is the apartment still available? I'd like to schedule a viewing.", timestamp: new Date(Date.now() - 3600000) },
-            unreadCount: 1,
+            unreadCount: 1, // Initially unread
         },
         {
             id: 'conv2', tenantId: 'tenant456', tenantName: 'Tenant B Inquiry', listingId: 'landlord_prop1', listingTitle: 'My Spacious 3 Bedroom Apartment',
             lastMessage: { id: 'msg2', senderId: 'landlord', text: "Yes, it is. When would you like to come?", timestamp: new Date(Date.now() - 86400000 * 2) },
-            unreadCount: 0,
+            unreadCount: 1, // Initially unread
         },
          {
             id: 'conv3', tenantId: 'tenant789', tenantName: 'Quick Question C', listingId: 'landlord_prop2', listingTitle: 'My Cozy 2 Bedroom Flat',
@@ -95,6 +116,18 @@ async function sendMessage(conversationId: string, text: string): Promise<{ succ
 
 // --- End Mock API Functions ---
 
+// Function to update session storage with conversations and total unread count
+const updateSessionStorage = (conversations: Conversation[]) => {
+    try {
+        const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+        sessionStorage.setItem('landlordConversations', JSON.stringify(conversations));
+        sessionStorage.setItem('landlordUnreadCount', totalUnread.toString());
+        console.log("Updated sessionStorage: Total unread =", totalUnread);
+    } catch (e) {
+        console.error("Failed to update sessionStorage", e);
+    }
+};
+
 
 export default function LandlordMessagesPage() {
     const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -107,6 +140,7 @@ export default function LandlordMessagesPage() {
     const [isSending, setIsSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const router = useRouter();
+    const messageEndRef = useRef<HTMLDivElement>(null); // Ref for scrolling
 
      // Auth Check
     useEffect(() => {
@@ -128,6 +162,7 @@ export default function LandlordMessagesPage() {
             .then(data => {
                 setConversations(data);
                 setFilteredConversations(data); // Initialize filter list
+                updateSessionStorage(data); // Update session storage on initial load
             })
             .catch(err => console.error("Error fetching conversations:", err))
             .finally(() => setIsLoadingConversations(false));
@@ -144,16 +179,24 @@ export default function LandlordMessagesPage() {
     }, [searchTerm, conversations]);
 
 
-    // Fetch messages when a conversation is selected
+    // Fetch messages when a conversation is selected AND mark as read
     useEffect(() => {
         if (selectedConversation) {
             setIsLoadingMessages(true);
             fetchMessages(selectedConversation.id)
                 .then(data => {
                     setMessages(data);
-                    // TODO: Mark conversation as read (API call and update state)
-                    // Mark as read locally for UI update
-                     setConversations(prev => prev.map(c => c.id === selectedConversation.id ? {...c, unreadCount: 0} : c));
+                    // Mark conversation as read locally if it has unread messages
+                    if (selectedConversation.unreadCount > 0) {
+                        setConversations(prevConvos => {
+                            const updatedConvos = prevConvos.map(c =>
+                                c.id === selectedConversation.id ? { ...c, unreadCount: 0 } : c
+                            );
+                            // Update session storage after marking as read
+                            updateSessionStorage(updatedConvos);
+                            return updatedConvos;
+                        });
+                    }
                 })
                 .catch(err => console.error("Error fetching messages:", err))
                 .finally(() => setIsLoadingMessages(false));
@@ -161,6 +204,11 @@ export default function LandlordMessagesPage() {
             setMessages([]); // Clear messages if no conversation is selected
         }
     }, [selectedConversation]);
+
+     // Scroll to bottom when messages load or new message is added
+    useEffect(() => {
+        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
 
     const handleSelectConversation = (conversation: Conversation) => {
@@ -177,15 +225,21 @@ export default function LandlordMessagesPage() {
         if (result.success && result.newMessage) {
             setMessages(prev => [...prev, result.newMessage!]);
             setNewMessage('');
-             // Update last message in the conversation list
-             setConversations(prev => prev.map(c => c.id === selectedConversation.id ? {...c, lastMessage: result.newMessage!} : c));
+             // Update last message in the conversation list and save to session storage
+             setConversations(prevConvos => {
+                 const updatedConvos = prevConvos.map(c =>
+                     c.id === selectedConversation.id
+                         ? { ...c, lastMessage: result.newMessage! }
+                         : c
+                 );
+                 updateSessionStorage(updatedConvos); // Update session storage
+                 return updatedConvos;
+             });
         } else {
             // Handle error (e.g., show toast)
             console.error("Failed to send message:", result.error);
         }
         setIsSending(false);
-        // Scroll to bottom after sending
-        // TODO: Implement scroll-to-bottom logic for the message area
     };
 
     // Helper to get initials for Avatar fallback
@@ -270,32 +324,35 @@ export default function LandlordMessagesPage() {
                                 ) : messages.length === 0 ? (
                                      <p className="text-center text-sm text-muted-foreground pt-10">No messages in this conversation yet.</p>
                                 ) : (
-                                    messages.map((msg) => (
-                                        <div
-                                            key={msg.id}
-                                            className={cn(
-                                                "flex w-full",
-                                                msg.senderId === 'landlord' ? "justify-end" : "justify-start"
-                                            )}
-                                        >
+                                    <>
+                                        {messages.map((msg) => (
                                             <div
+                                                key={msg.id}
                                                 className={cn(
-                                                    "max-w-[75%] p-3 rounded-lg",
-                                                    msg.senderId === 'landlord'
-                                                        ? "bg-primary text-primary-foreground"
-                                                        : "bg-muted text-foreground"
+                                                    "flex w-full",
+                                                    msg.senderId === 'landlord' ? "justify-end" : "justify-start"
                                                 )}
                                             >
-                                                <p className="text-sm">{msg.text}</p>
-                                                <p className={cn(
-                                                    "text-xs mt-1",
-                                                     msg.senderId === 'landlord' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left"
-                                                    )}>
-                                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
+                                                <div
+                                                    className={cn(
+                                                        "max-w-[75%] p-3 rounded-lg",
+                                                        msg.senderId === 'landlord'
+                                                            ? "bg-primary text-primary-foreground"
+                                                            : "bg-muted text-foreground"
+                                                    )}
+                                                >
+                                                    <p className="text-sm">{msg.text}</p>
+                                                    <p className={cn(
+                                                        "text-xs mt-1",
+                                                         msg.senderId === 'landlord' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left"
+                                                        )}>
+                                                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        ))}
+                                        <div ref={messageEndRef} /> {/* Empty div to mark the end */}
+                                     </>
                                 )}
                             </ScrollArea>
 
@@ -331,3 +388,4 @@ export default function LandlordMessagesPage() {
         </div>
     );
 }
+

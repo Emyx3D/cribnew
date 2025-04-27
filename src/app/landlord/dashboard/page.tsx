@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MessageSquare, Home, BarChart } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils'; // Import cn
 
@@ -13,6 +13,9 @@ import { cn } from '@/lib/utils'; // Import cn
 
 export default function LandlordDashboardPage() {
     const router = useRouter();
+    const [listingsCount, setListingsCount] = useState(0); // Initialize with 0
+    const [unreadMessages, setUnreadMessages] = useState(0); // Initialize with 0
+    const [pendingInspections, setPendingInspections] = useState(0); // Initialize with 0
 
     // Basic Authentication Check
     useEffect(() => {
@@ -23,6 +26,13 @@ export default function LandlordDashboardPage() {
             if (!isLoggedIn || userRole !== 'landlord') {
                 console.warn('Unauthorized access attempt to landlord dashboard.');
                 router.push('/login'); // Redirect non-landlords or logged out users
+            } else {
+                 // Fetch dashboard data if logged in (replace with actual API call)
+                 fetchDashboardData();
+
+                 // Read unread count from session storage
+                 const storedUnreadCount = sessionStorage.getItem('landlordUnreadCount');
+                 setUnreadMessages(storedUnreadCount ? parseInt(storedUnreadCount, 10) : 0);
             }
         } catch (error) {
             console.error("Error accessing sessionStorage for auth check:", error);
@@ -30,10 +40,14 @@ export default function LandlordDashboardPage() {
         }
     }, [router]);
 
-    // Mock data (replace with actual fetched data)
-    const listingsCount = 3; // Example
-    const unreadMessages = 2; // Example
-    const pendingInspections = 1; // Example
+    // Mock function to fetch dashboard data
+    async function fetchDashboardData() {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setListingsCount(3); // Example data
+        // setUnreadMessages(2); // Example data - Now read from storage
+        setPendingInspections(1); // Example data
+    }
 
     return (
         <div className="container mx-auto px-4 py-12">
@@ -58,7 +72,7 @@ export default function LandlordDashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{unreadMessages}</div>
-                        {/* <Link href="/landlord/dashboard/messages" className="text-xs text-primary hover:underline">View Messages</Link> */}
+                        <Link href="/landlord/dashboard/messages" className="text-xs text-primary hover:underline">View Messages</Link>
                     </CardContent>
                 </Card>
                 <Card>
@@ -111,7 +125,7 @@ export default function LandlordDashboardPage() {
                     <CardContent>
                         <Button asChild variant="outline" className="w-full">
                             <Link href="/landlord/dashboard/messages"> {/* Ensure Link is single child */}
-                                Open Messages ({unreadMessages} new)
+                                Open Messages {unreadMessages > 0 ? `(${unreadMessages} new)` : ''}
                             </Link>
                         </Button>
                     </CardContent>
@@ -146,3 +160,4 @@ export default function LandlordDashboardPage() {
         </div>
     );
 }
+
