@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Home, Eye, MessageSquare, Loader2 } from "lucide-react";
-// TODO: Import chart components if needed, e.g., from shadcn/ui/chart
 
-// TODO: Define types for Analytics data
+// Define types for Analytics data
 type AnalyticsData = {
   totalUsers: number;
   totalLandlords: number;
@@ -16,19 +15,25 @@ type AnalyticsData = {
   totalContactsInitiated: number; // Example: Over last 30 days
 };
 
-// TODO: Replace with actual API call to fetch analytics
+// Simulate fetching real-time analytics - Replace with actual API endpoint
 async function fetchAnalytics(): Promise<AnalyticsData> {
   console.log("Fetching analytics...");
-  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-  // Return mock data
+  // Replace this with your actual API endpoint
+  //const response = await fetch('/api/analytics');
+  //const data = await response.json();
+
+  // Simulate API delay (remove in production)
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // Mock data for demonstration
   return {
-    totalUsers: 1578,
-    totalLandlords: 235,
-    totalTenants: 1343,
-    activeListings: 450,
-    pendingVerifications: 3, // Matches the landlord table example
-    totalListingViews: 25678,
-    totalContactsInitiated: 1890,
+    totalUsers: Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000, // Users between 1000 and 2000
+    totalLandlords: Math.floor(Math.random() * (300 - 100 + 1)) + 100, // Landlords between 100 and 300
+    totalTenants: Math.floor(Math.random() * (1700 - 900 + 1)) + 900,  // Tenants between 900 and 1700
+    activeListings: Math.floor(Math.random() * (600 - 300 + 1)) + 300,  // Listings between 300 and 600
+    pendingVerifications: Math.floor(Math.random() * 5), // 0 to 4 verifications
+    totalListingViews: Math.floor(Math.random() * (30000 - 10000 + 1)) + 10000, // Views between 10k and 30k
+    totalContactsInitiated: Math.floor(Math.random() * (2000 - 500 + 1)) + 500, // Contacts between 500 and 2k
   };
 }
 
@@ -37,17 +42,30 @@ export function AnalyticsOverview() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch analytics on component mount and set interval to update in real-time
   useEffect(() => {
-    fetchAnalytics()
-      .then(data => {
+    const getAnalytics = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchAnalytics();
         setAnalytics(data);
-        setIsLoading(false);
-      })
-      .catch(err => {
+        setError(null);
+      } catch (err) {
         console.error("Error fetching analytics:", err);
         setError("Failed to load analytics data.");
+      } finally {
         setIsLoading(false);
-      });
+      }
+    };
+
+    // Get analytics initially
+    getAnalytics();
+
+    // Set interval to update analytics every 30 seconds (adjust as needed)
+    const intervalId = setInterval(getAnalytics, 30000); // 30 seconds
+
+    // Clear interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   if (isLoading) {
