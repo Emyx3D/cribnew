@@ -245,14 +245,15 @@ export default function ManageListingsPage() {
 
                             </CardContent>
                             <CardFooter className="p-3 border-t flex justify-end gap-2">
-                                {/* TODO: Add Edit Functionality */}
-                                <Button variant="outline" size="sm" asChild disabled={deletingId === listing.id}>
-                                   <Link href={`/landlord/dashboard/listings/edit/${listing.id}`}> {/* TODO: Create edit page */}
+                                {/* Edit Button - Updated Link */}
+                                <Button variant="outline" size="sm" asChild>
+                                   <Link href={`/landlord/dashboard/listings/edit/${listing.id}`}>
                                         <Pencil className="h-4 w-4" />
                                         <span className="ml-1 hidden sm:inline">Edit</span>
                                    </Link>
                                 </Button>
 
+                                {/* Delete Button */}
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                          <Button variant="destructive" size="sm" disabled={deletingId === listing.id}>
