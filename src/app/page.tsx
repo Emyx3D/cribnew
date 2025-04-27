@@ -82,12 +82,13 @@ export default function Home() {
         </div>
         <div className="lg:w-1/2 flex justify-center">
            <Image
-            src="https://picsum.photos/600/400?random=1" // Placeholder image
+            src="https://picsum.photos/seed/hero_house/600/400" // Updated placeholder image
             alt="Happy family in front of a house"
             width={600}
             height={400}
             className="rounded-lg shadow-xl object-cover"
             priority // Load image sooner
+            unoptimized // Added for picsum consistency
            />
         </div>
       </section>

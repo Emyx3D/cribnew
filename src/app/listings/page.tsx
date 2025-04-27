@@ -57,7 +57,7 @@ const listings = [
     price: "₦3,500,000/year",
     bedrooms: 3,
     bathrooms: 4,
-    imageUrl: "https://picsum.photos/400/300?random=10",
+    imageUrl: "https://picsum.photos/seed/house1_livingroom/400/300", // Updated image
     verified: true,
     amenities: ["Water Supply", "Electricity", "Security"],
   },
@@ -68,7 +68,7 @@ const listings = [
     price: "₦1,800,000/year",
     bedrooms: 2,
     bathrooms: 2,
-    imageUrl: "https://picsum.photos/400/300?random=11",
+    imageUrl: "https://picsum.photos/seed/house2_bedroom/400/300", // Updated image
     verified: true,
     amenities: ["Water Supply", "Prepaid Meter"],
   },
@@ -79,7 +79,7 @@ const listings = [
     price: "₦1,200,000/year",
     bedrooms: 1,
     bathrooms: 1,
-    imageUrl: "https://picsum.photos/400/300?random=12",
+    imageUrl: "https://picsum.photos/seed/house3_studio/400/300", // Updated image
     verified: false, // Example of unverified landlord
     amenities: ["Furnished", "Generator"],
   },
@@ -90,7 +90,7 @@ const listings = [
     price: "₦5,000,000/year",
     bedrooms: 4,
     bathrooms: 5,
-    imageUrl: "https://picsum.photos/400/300?random=13",
+    imageUrl: "https://picsum.photos/seed/house4_compound/400/300", // Updated image
     verified: true,
     amenities: ["Parking Space", "Water Heater", "Security"],
   },
@@ -157,6 +157,7 @@ export default function ListingsPage() {
                     width={400}
                     height={300}
                     className="w-full h-48 object-cover"
+                    unoptimized // Added for picsum consistency
                   />
                   {listing.verified && (
                     <Badge variant="secondary" className="absolute top-2 right-2 bg-green-100 text-green-800 border-green-300">

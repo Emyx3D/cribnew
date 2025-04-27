@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -52,7 +53,7 @@ async function fetchLandlordListings(): Promise<LandlordListing[]> {
             price: "₦3,500,000/year",
             bedrooms: 3,
             bathrooms: 4,
-            imageUrl: "https://picsum.photos/400/300?random=10",
+            imageUrl: "https://picsum.photos/seed/my_house1_exterior/400/300", // Updated image
             status: 'active',
             createdAt: new Date(Date.now() - 86400000 * 10),
             views: 1205,
@@ -65,7 +66,7 @@ async function fetchLandlordListings(): Promise<LandlordListing[]> {
             price: "₦1,800,000/year",
             bedrooms: 2,
             bathrooms: 2,
-            imageUrl: "https://picsum.photos/400/300?random=11",
+            imageUrl: "https://picsum.photos/seed/my_house2_kitchen/400/300", // Updated image
             status: 'inactive', // Example inactive
             createdAt: new Date(Date.now() - 86400000 * 30),
             views: 850,
@@ -78,7 +79,7 @@ async function fetchLandlordListings(): Promise<LandlordListing[]> {
             price: "₦1,200,000/year",
             bedrooms: 1,
             bathrooms: 1,
-            imageUrl: "https://picsum.photos/400/300?random=12",
+            imageUrl: "https://picsum.photos/seed/my_house3_bathroom/400/300", // Updated image
             status: 'pending_review', // Example pending
             createdAt: new Date(Date.now() - 86400000 * 1),
         },
@@ -206,6 +207,7 @@ export default function ManageListingsPage() {
                                     width={400}
                                     height={200} // Adjust height for management view
                                     className="w-full h-40 object-cover" // Smaller height
+                                    unoptimized // Added for picsum consistency
                                 />
                                 <Badge
                                     variant={getStatusBadgeVariant(listing.status)}

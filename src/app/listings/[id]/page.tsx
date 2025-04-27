@@ -1,3 +1,4 @@
+
 'use client'; // Add 'use client' directive
 
 import { useState, useEffect } from 'react'; // Import useState, useEffect
@@ -39,7 +40,7 @@ async function getListingData(id: string) {
         bedrooms: 3,
         bathrooms: 4,
         description: "A well-maintained and spacious 3-bedroom flat located in a serene part of Lekki Phase 1. Features include large living areas, modern kitchen fittings, and ample parking space. Close to major roads and amenities.",
-        imageUrl: "https://picsum.photos/800/600?random=10",
+        imageUrl: "https://picsum.photos/seed/house1_livingroom_lg/800/600", // Updated image
         verified: true,
         amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
         landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
@@ -52,7 +53,7 @@ async function getListingData(id: string) {
         bedrooms: 2,
         bathrooms: 2,
          description: "A lovely and affordable 2-bedroom flat perfect for young professionals or small families. Located in the heart of Yaba with easy access to transportation. Prepaid electricity meter installed.",
-        imageUrl: "https://picsum.photos/800/600?random=11",
+        imageUrl: "https://picsum.photos/seed/house2_bedroom_lg/800/600", // Updated image
         verified: true,
         amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
          landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
@@ -65,7 +66,7 @@ async function getListingData(id: string) {
         bedrooms: 1,
         bathrooms: 1,
          description: "Compact and modern studio apartment in the secure and quiet Ikeja GRA. Ideal for singles. Comes furnished with basic amenities and has a backup generator.",
-        imageUrl: "https://picsum.photos/800/600?random=12",
+        imageUrl: "https://picsum.photos/seed/house3_studio_lg/800/600", // Updated image
         verified: false, // Example of unverified landlord
         amenities: ["Furnished", "Generator", "Air Conditioning"],
          landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" }, // Phone might be hidden until verified
@@ -78,7 +79,7 @@ async function getListingData(id: string) {
         bedrooms: 4,
         bathrooms: 5,
         description: "Large family-sized duplex in a gated estate in Magodo Phase 2. Features a private garden, ample parking, water heater in all bathrooms, and good security.",
-        imageUrl: "https://picsum.photos/800/600?random=13",
+        imageUrl: "https://picsum.photos/seed/house4_compound_lg/800/600", // Updated image
         verified: true,
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
          landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
@@ -172,6 +173,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                 height={500}
                 className="w-full h-64 md:h-96 object-cover"
                 priority
+                unoptimized // Added for picsum consistency
               />
              <CardContent className="p-6">
                 <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
