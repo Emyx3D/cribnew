@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { PlusCircle, MessageSquare, Home, BarChart } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils'; // Import cn
 
 // TODO: Fetch landlord specific data (listings count, messages count etc.)
 
@@ -80,7 +82,7 @@ export default function LandlordDashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                            <Link href="/landlord/dashboard/listings/new"> {/* TODO: Create this page */}
+                            <Link href="/landlord/dashboard/listings/new"> {/* Ensure Link is single child */}
                                 Create Listing
                             </Link>
                         </Button>
@@ -94,7 +96,7 @@ export default function LandlordDashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <Button asChild variant="outline" className="w-full">
-                            <Link href="/landlord/dashboard/listings"> {/* TODO: Create this page */}
+                            <Link href="/landlord/dashboard/listings"> {/* Ensure Link is single child */}
                                 View My Listings
                             </Link>
                         </Button>
@@ -108,7 +110,7 @@ export default function LandlordDashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <Button asChild variant="outline" className="w-full">
-                            <Link href="/landlord/dashboard/messages"> {/* TODO: Create this page */}
+                            <Link href="/landlord/dashboard/messages"> {/* Ensure Link is single child */}
                                 Open Messages ({unreadMessages} new)
                             </Link>
                         </Button>
@@ -121,8 +123,19 @@ export default function LandlordDashboardPage() {
                         <CardDescription>See how your listings are performing (views, contacts).</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button asChild variant="outline" className="w-full" disabled> {/* Disabled for now */}
-                            <Link href="/landlord/dashboard/analytics"> {/* TODO: Create this page */}
+                        {/* Apply disabled styles directly to Link and remove disabled from Button */}
+                        <Button asChild variant="outline" className="w-full">
+                            <Link href="/landlord/dashboard/analytics" // Ensure Link is single child
+                                  className={cn(
+                                      "pointer-events-none opacity-50", // Add disabled styles/behavior
+                                      // Ensure button styles are still applied correctly by Button's default classes
+                                      // The buttonVariants() function is internal to Button, but we mimic the styling
+                                      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium"
+                                    )}
+                                  aria-disabled="true" // For accessibility
+                                  tabIndex={-1} // Prevent tabbing
+                                  onClick={(e) => e.preventDefault()} // Prevent click navigation
+                                  >
                                 View Analytics (Coming Soon)
                             </Link>
                         </Button>
