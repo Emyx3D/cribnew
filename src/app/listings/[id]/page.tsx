@@ -106,19 +106,97 @@ async function getListingData(id: string): Promise<ListingData> {
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
          landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
       },
+      // Add the specific listing ID referenced in ManageListingsTable if needed
+        {
+            id: 'landlord_prop1', // Assuming this is a string ID
+            title: "My Spacious 3 Bedroom Apartment",
+            location: "Lekki Phase 1, Lagos",
+            price: "₦3,500,000/year",
+            bedrooms: 3,
+            bathrooms: 4,
+            imageUrl: "https://picsum.photos/seed/my_house1_exterior/800/600", // Updated image
+            gallery: [
+                "https://picsum.photos/seed/my_house1_exterior/800/600",
+                "https://picsum.photos/seed/my_house1_kitchen/800/600",
+                "https://picsum.photos/seed/my_house1_bedroom/800/600",
+            ],
+            description: "This is the spacious 3 bedroom apartment listed by the test landlord. Excellent condition.",
+            verified: true, // Assuming landlord is verified
+            status: 'active',
+            amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
+            landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" }, // Assuming landlord is verified
+        },
+        // Add another listing for testing links
+         {
+            id: 'landlord_prop2', // Assuming this is a string ID
+            title: "My Cozy 2 Bedroom Flat",
+            location: "Yaba, Lagos",
+            price: "₦1,800,000/year",
+            bedrooms: 2,
+            bathrooms: 2,
+            imageUrl: "https://picsum.photos/seed/my_house2_kitchen/800/600", // Updated image
+             gallery: [
+                 "https://picsum.photos/seed/my_house2_kitchen/800/600",
+                 "https://picsum.photos/seed/my_house2_living/800/600",
+             ],
+             description: "Cozy and affordable flat in Yaba.",
+             verified: true,
+             amenities: ["Water Supply", "Prepaid Meter"],
+             landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" }, // Assuming landlord is verified
+        },
+         // Add listings from FlaggedListingsTable for linking
+        {
+            id: 'prop123',
+            title: 'Luxury Penthouse with Pool',
+            location: "Banana Island, Lagos",
+            price: "₦25,000,000/year",
+            bedrooms: 4,
+            bathrooms: 5,
+            imageUrl: 'https://picsum.photos/seed/prop123_pool/800/600',
+            gallery: ['https://picsum.photos/seed/prop123_pool/800/600', 'https://picsum.photos/seed/prop123_living/800/600'],
+            description: 'Ultra-luxury penthouse with amazing views and private pool.',
+            verified: true, // Landlord might be verified even if listing is flagged
+            amenities: ['Swimming Pool', 'Security', 'Parking Space', 'Gym'],
+            landlord: { id: 'landlord_bigshot', name: 'Mr. Big Shot', verified: true, phone: '+2349011112222' }
+        },
+        {
+            id: 'prop456',
+            title: 'Cozy Studio Near Market',
+            location: "Oshodi, Lagos",
+            price: "₦500,000/year",
+            bedrooms: 1,
+            bathrooms: 1,
+            imageUrl: 'https://picsum.photos/seed/prop456_studio/800/600',
+            gallery: ['https://picsum.photos/seed/prop456_studio/800/600', 'https://picsum.photos/seed/prop456_bathroom/800/600'],
+            description: 'Affordable studio apartment with basic amenities, close to the market.',
+            verified: true,
+            amenities: ['Water Supply', 'Tiled Floors'],
+            landlord: { id: 'landlord_reasonable', name: 'Mrs. Reasonable', verified: true, phone: '+2348033334444' }
+        },
+        {
+            id: 'prop789',
+            title: 'Beachfront Villa (URGENT RENT)',
+            location: "Eleko Beach, Lagos",
+            price: "₦8,000,000/year",
+            bedrooms: 5,
+            bathrooms: 6,
+            imageUrl: 'https://picsum.photos/seed/prop789_beach/800/600',
+            gallery: ['https://picsum.photos/seed/prop789_beach/800/600', 'https://picsum.photos/seed/prop789_interior/800/600'],
+            description: 'Spacious beachfront property, available for immediate rent. Great views!',
+            verified: false, // Assume landlord verification might be pending or failed
+            amenities: ['Beach Access', 'Balcony', 'Parking Space'],
+            landlord: { id: 'landlord_scamface', name: 'Shady McScamface', verified: false, phone: '+2347055556666' }
+        }
     ];
-  // Convert id param to number if mock data uses numbers
-  const listingId = parseInt(id, 10);
-  const listing = listings.find(l => l.id === listingId);
 
-  if (!listing) {
-    // Handle not found case - maybe redirect or show a 404 component
-    // Return null or throw an error depending on desired behavior
-    // Returning null for now to match previous structure
-    return null;
-  }
-  // Ensure the structure matches ListingData including the gallery
-  return listing as ListingData;
+   // Find by string or number depending on how IDs are stored/passed
+   const listing = listings.find(l => String(l.id) === String(id));
+
+   if (!listing) {
+     return null;
+   }
+   // Ensure the structure matches ListingData including the gallery
+   return listing as ListingData; // Assuming the structure matches
 }
 
 
@@ -130,7 +208,7 @@ interface ListingDetailPageProps {
 // Define the listing type based on mock data structure
 // Add 'gallery' to the type definition
 type ListingData = {
-    id: number;
+    id: number | string; // Allow string IDs
     title: string;
     location: string;
     price: string;
@@ -152,7 +230,7 @@ type ListingData = {
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   // Since React.use() cannot be used in Client Components like this (it's for Server Components/async contexts),
-  // we'll stick to accessing params within useEffect.
+  // we'll stick to direct access and rely on the dependency array in useEffect.
 
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,7 +246,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
         console.error("Listing ID is missing from params.");
         setIsLoading(false); // Stop loading if ID is missing
         // Optionally redirect or show an error message
-        // router.push('/404'); // Example redirect
+        router.push('/404'); // Example redirect
         return; // Don't fetch if id is not available
     }
 
@@ -193,7 +271,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [params, router, toast]); // Use the whole params object as dependency
+  }, [params.id, router, toast]); // Use params.id directly in dependency array
 
 
   const handleRequestInspection = () => {
