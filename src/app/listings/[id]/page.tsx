@@ -152,9 +152,7 @@ type ListingData = {
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   // Since React.use() cannot be used in Client Components like this (it's for Server Components/async contexts),
-  // we'll stick to direct access and rely on the dependency array in useEffect.
-  // The warning might persist, but this is the standard way for now.
-  // const listingId = params.id; // Accessing here can cause the warning if done outside useEffect
+  // we'll stick to accessing params within useEffect.
 
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
