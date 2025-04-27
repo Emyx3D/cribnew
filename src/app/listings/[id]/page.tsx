@@ -40,7 +40,7 @@ async function getListingData(id: string) {
         bedrooms: 3,
         bathrooms: 4,
         description: "A well-maintained and spacious 3-bedroom flat located in a serene part of Lekki Phase 1. Features include large living areas, modern kitchen fittings, and ample parking space. Close to major roads and amenities.",
-        imageUrl: "https://picsum.photos/seed/house1_livingroom_lg/800/600", // Updated image
+        imageUrl: "https://picsum.photos/seed/house1_livingroom_lg/800/600", // Living room for house 1
         verified: true,
         amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
         landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
@@ -53,7 +53,7 @@ async function getListingData(id: string) {
         bedrooms: 2,
         bathrooms: 2,
          description: "A lovely and affordable 2-bedroom flat perfect for young professionals or small families. Located in the heart of Yaba with easy access to transportation. Prepaid electricity meter installed.",
-        imageUrl: "https://picsum.photos/seed/house2_bedroom_lg/800/600", // Updated image
+        imageUrl: "https://picsum.photos/seed/house2_bedroom_lg/800/600", // Bedroom for house 2
         verified: true,
         amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
          landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
@@ -66,7 +66,7 @@ async function getListingData(id: string) {
         bedrooms: 1,
         bathrooms: 1,
          description: "Compact and modern studio apartment in the secure and quiet Ikeja GRA. Ideal for singles. Comes furnished with basic amenities and has a backup generator.",
-        imageUrl: "https://picsum.photos/seed/house3_studio_lg/800/600", // Updated image
+        imageUrl: "https://picsum.photos/seed/house3_bathroom_lg/800/600", // Bathroom for house 3
         verified: false, // Example of unverified landlord
         amenities: ["Furnished", "Generator", "Air Conditioning"],
          landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" }, // Phone might be hidden until verified
@@ -79,7 +79,7 @@ async function getListingData(id: string) {
         bedrooms: 4,
         bathrooms: 5,
         description: "Large family-sized duplex in a gated estate in Magodo Phase 2. Features a private garden, ample parking, water heater in all bathrooms, and good security.",
-        imageUrl: "https://picsum.photos/seed/house4_compound_lg/800/600", // Updated image
+        imageUrl: "https://picsum.photos/seed/house4_compound_lg/800/600", // Compound/Exterior for house 4
         verified: true,
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
          landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
@@ -111,21 +111,25 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const { toast } = useToast();
   const router = useRouter(); // Initialize router
+  const listingId = params.id; // Extract id from params for stable usage in useEffect dependency
 
   // Fetch data on the client side since this is now a Client Component
-  useEffect(() => { // Changed useState(() => {}) to useEffect(() => {}) for clarity
+  useEffect(() => {
+    if (!listingId) return; // Don't fetch if id is not available
+
     setIsLoading(true);
-    getListingData(params.id)
+    getListingData(listingId)
       .then(data => {
         setListing(data);
-        setIsLoading(false);
       })
       .catch(err => {
         console.error("Failed to load listing data:", err);
-        setIsLoading(false);
         // Optionally show an error message or redirect
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-  }, [params.id]); // Dependency array ensures fetch runs when id changes
+  }, [listingId]); // Dependency array ensures fetch runs when id changes
 
   const handleRequestInspection = () => {
       // TODO: Implement actual inspection request logic (e.g., API call)
