@@ -4,9 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import useRouter
-import { useState, useEffect } from 'react'; // Import useState and useEffect
-import { cn } from '@/lib/utils'; // Import cn utility function
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from 'lucide-react'; // Import Loader2
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -31,20 +31,29 @@ const formSchema = z.object({
   }),
 });
 
-// Hardcoded credentials
-const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' };
-const tenantCredentials = { email: 'user@test.com', password: 'Pass=1010', role: 'tenant' };
-// Add admin role if needed, e.g., const adminCredentials = { email: 'admin@test.com', password: 'AdminPass=1010', role: 'admin' };
+// Define User Roles
+type UserRole = 'admin' | 'landlord' | 'tenant' | null;
+
+// Hardcoded credentials for simulation
+const adminCredentials = { email: 'Admin@cribdirect.com', password: 'Pass=1010', role: 'admin' as UserRole };
+const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' as UserRole };
+const tenantCredentials = { email: 'user@test.com', password: 'Pass=1010', role: 'tenant' as UserRole };
+
 
 export default function LoginPage() {
    const { toast } = useToast();
-   const router = useRouter(); // Initialize router
-   const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+   const router = useRouter();
+   const [isLoading, setIsLoading] = useState(false);
 
    // Clear session storage on component mount to ensure fresh login state
    useEffect(() => {
-     sessionStorage.removeItem('userRole');
-     sessionStorage.removeItem('isLoggedIn');
+     try {
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('isLoggedIn');
+     } catch (error) {
+        console.error("Error clearing sessionStorage:", error);
+        // Non-critical error, maybe log it
+     }
    }, []);
 
 
@@ -57,21 +66,26 @@ export default function LoginPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true); // Start loading indicator
+    setIsLoading(true);
     console.log('Attempting login with:', values);
 
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     let loginSuccess = false;
-    let userRole: 'landlord' | 'tenant' | 'admin' | null = null; // Define potential roles
+    let userRole: UserRole = null;
     let redirectPath = '/';
 
     // Check against hardcoded credentials
-    if (values.email === landlordCredentials.email && values.password === landlordCredentials.password) {
+    if (values.email === adminCredentials.email && values.password === adminCredentials.password) {
+        loginSuccess = true;
+        userRole = adminCredentials.role;
+        redirectPath = '/admin/dashboard';
+        console.log("Admin login simulated");
+    } else if (values.email === landlordCredentials.email && values.password === landlordCredentials.password) {
       loginSuccess = true;
       userRole = landlordCredentials.role;
-      redirectPath = '/admin/dashboard'; // Landlords might manage listings via admin or a dedicated dashboard
+      redirectPath = '/landlord/dashboard'; // Redirect landlord to their dashboard
       console.log("Landlord login simulated");
     } else if (values.email === tenantCredentials.email && values.password === tenantCredentials.password) {
       loginSuccess = true;
@@ -79,7 +93,6 @@ export default function LoginPage() {
       redirectPath = '/listings'; // Redirect tenant to listings page
       console.log("Tenant login simulated");
     }
-    // Add else if block for admin credentials if implemented
 
     if (loginSuccess && userRole) {
       // Simulate successful login by setting session storage
@@ -88,16 +101,14 @@ export default function LoginPage() {
          sessionStorage.setItem('userRole', userRole);
       } catch (error) {
          console.error("Failed to set sessionStorage:", error);
-         // Handle potential storage errors (e.g., private browsing mode)
          toast({
             variant: 'destructive',
             title: "Login Error",
             description: "Could not save login session. Please check browser settings.",
          });
          setIsLoading(false);
-         return; // Stop execution if storage fails
+         return;
       }
-
 
       toast({
         title: "Login Successful!",
@@ -109,7 +120,6 @@ export default function LoginPage() {
       setTimeout(() => {
         router.push(redirectPath);
         router.refresh(); // Force refresh to update header state based on session storage
-        // setIsLoading(false); // Stop loading indicator after redirection logic starts - might cause flicker if kept here
       }, 1000);
        // Keep loading indicator until redirect starts
     } else {

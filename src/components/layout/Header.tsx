@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, ShieldCheck, LogOut } from 'lucide-react'; // Added ShieldCheck for Admin, LogOut
-import { cn } from '@/lib/utils'; // Import cn if needed for conditional classes
+import { Menu, Home, ShieldCheck, LogOut, User, LayoutDashboard } from 'lucide-react'; // Added User, LayoutDashboard
+import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter for logout redirection
+import { useRouter } from 'next/navigation';
 
 
 // Type for user role
@@ -21,21 +21,17 @@ const useAuth = () => {
      // Check session storage on mount (client-side only)
      try {
        const loggedInStatus = sessionStorage.getItem('isLoggedIn') === 'true';
-       const role = sessionStorage.getItem('userRole') as UserRole; // Cast to UserRole or null
+       const role = sessionStorage.getItem('userRole') as UserRole;
 
        setIsLoggedIn(loggedInStatus);
-       setUserRole(loggedInStatus ? role : null); // Only set role if logged in
+       setUserRole(loggedInStatus ? role : null);
        console.log("Auth state from sessionStorage:", { loggedInStatus, role });
      } catch (error) {
         console.error("Could not access sessionStorage:", error);
-        // Handle potential storage access issues (e.g., disabled cookies/storage in browser settings)
         setIsLoggedIn(false);
         setUserRole(null);
      }
 
-     // Optional: Add event listener for storage changes if needed for multi-tab sync
-     // window.addEventListener('storage', handleStorageChange);
-     // return () => window.removeEventListener('storage', handleStorageChange);
    }, []);
 
    return { isLoggedIn, userRole };
@@ -55,13 +51,11 @@ export function Header() {
     }
     // Redirect to login or home page after logout
     router.push('/login');
-    // Optionally force reload or use state management to update UI instantly
     router.refresh(); // Trigger a refresh to re-evaluate useAuth
     console.log('Logout simulated, sessionStorage cleared.');
   };
 
-
-  const isAdmin = userRole === 'admin'; // Check if the user is an admin
+  const isAdmin = userRole === 'admin';
   const isLandlord = userRole === 'landlord';
   const isTenant = userRole === 'tenant';
 
@@ -85,23 +79,40 @@ export function Header() {
             {/* Only show "List Your Property" if not logged in or if logged in as a landlord */}
              {(!isLoggedIn || isLandlord) && (
                 <Link
-                href="/landlord/register"
+                href="/landlord/register" // Changed to /landlord/dashboard/listings/new or similar?
                 className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >
                 List Your Property
                 </Link>
             )}
-            {/* Admin link in desktop header */}
-            {(isAdmin || isLandlord) && ( // Show Admin Dashboard for admin and landlord roles
+            {/* Dashboard link in desktop header */}
+            {isAdmin && (
                  <Link
                    href="/admin/dashboard"
                    className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
                  >
                     <ShieldCheck className="h-4 w-4 mr-1" />
-                    {isAdmin ? 'Admin Dashboard' : 'Landlord Dashboard'}
+                    Admin Dashboard
                  </Link>
             )}
-             {/* Add other desktop nav links here if needed */}
+             {isLandlord && (
+                 <Link
+                   href="/landlord/dashboard"
+                   className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
+                 >
+                    <LayoutDashboard className="h-4 w-4 mr-1" />
+                    Landlord Dashboard
+                 </Link>
+            )}
+             {isTenant && (
+                 <Link
+                   href="/tenant/dashboard" // TODO: Create tenant dashboard page
+                   className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
+                 >
+                    <User className="h-4 w-4 mr-1" />
+                    Tenant Dashboard
+                 </Link>
+            )}
           </nav>
         </div>
 
@@ -111,7 +122,7 @@ export function Header() {
              <Button
                variant="ghost"
                size="icon"
-               className="inline-flex md:hidden mr-2" // Show only on mobile
+               className="inline-flex md:hidden mr-2"
              >
                <Menu className="h-5 w-5" />
                <span className="sr-only">Toggle Menu</span>
@@ -120,28 +131,45 @@ export function Header() {
           <SheetContent side="left" className="pr-0">
              <Link
               href="/"
-              className="flex items-center space-x-2 mb-6 pl-6" // Added padding to align with items below
+              className="flex items-center space-x-2 mb-6 pl-6"
             >
               <Home className="h-6 w-6 text-primary" />
               <span className="font-bold">CribDirect</span>
             </Link>
-            <nav className="flex flex-col space-y-3 pl-6"> {/* Changed to nav, adjusted spacing */}
+            <nav className="flex flex-col space-y-3 pl-6">
                <Link href="/listings" className="text-sm hover:text-primary transition-colors">
                  Browse Listings
                </Link>
                 {(!isLoggedIn || isLandlord) && (
-                   <Link href="/landlord/register" className="text-sm hover:text-primary transition-colors">
+                   <Link href="/landlord/register" // TODO: Change link if needed
+                         className="text-sm hover:text-primary transition-colors">
                      List Your Property
                    </Link>
                 )}
-               <hr className="my-2 border-border" /> {/* Separator */}
-               {(isAdmin || isLandlord) && (
+               <hr className="my-2 border-border" />
+
+               {/* Mobile Specific Links */}
+               {isAdmin && (
                    <Link href="/admin/dashboard" className="text-sm hover:text-primary transition-colors flex items-center">
-                      <ShieldCheck className="h-4 w-4 mr-1"/> {isAdmin ? 'Admin Dashboard' : 'Landlord Dashboard'}
+                      <ShieldCheck className="h-4 w-4 mr-1"/> Admin Dashboard
                    </Link>
                )}
+               {isLandlord && (
+                   <Link href="/landlord/dashboard" className="text-sm hover:text-primary transition-colors flex items-center">
+                      <LayoutDashboard className="h-4 w-4 mr-1"/> Landlord Dashboard
+                   </Link>
+               )}
+               {isTenant && (
+                   <Link href="/tenant/dashboard" // TODO: Create tenant dashboard page
+                         className="text-sm hover:text-primary transition-colors flex items-center">
+                      <User className="h-4 w-4 mr-1"/> Tenant Dashboard
+                   </Link>
+               )}
+
+               {/* Auth Links */}
                {!isLoggedIn ? (
                  <>
+                   <hr className="my-2 border-border" />
                    <Link href="/register" className="text-sm hover:text-primary transition-colors">
                      Sign Up
                    </Link>
@@ -151,21 +179,7 @@ export function Header() {
                  </>
                ) : (
                  <>
-                    {/* Add authenticated user links here (e.g., Dashboard, Logout) */}
-                    {/* Example: Conditionally show different dashboard based on role */}
-                    {isTenant && (
-                       <Link href="/tenant/dashboard" // TODO: Create tenant dashboard page
-                           className="text-sm hover:text-primary transition-colors">
-                          My Tenant Dashboard
-                       </Link>
-                    )}
-                    {/* Generic Dashboard Link (if needed for other roles or fallback) */}
-                    {/* {!isAdmin && !isLandlord && !isTenant && (
-                       <Link href="/dashboard" className="text-sm hover:text-primary transition-colors">
-                         My Dashboard
-                       </Link>
-                    )} */}
-
+                    <hr className="my-2 border-border" />
                     {/* Logout Button */}
                     <Button variant="ghost" className="text-sm justify-start px-0 h-auto py-0 font-normal hover:text-primary transition-colors" onClick={handleLogout}>
                       <LogOut className="h-4 w-4 mr-1"/> Logout
@@ -192,25 +206,7 @@ export function Header() {
              </>
            ) : (
               <>
-                {/* Add authenticated user buttons here (e.g., Profile, Logout) */}
-                 {/* Example: Conditionally show different dashboard based on role */}
-                 {(isAdmin || isLandlord) && (
-                     <Button variant="ghost" asChild>
-                         <Link href="/admin/dashboard">{isAdmin ? 'Admin' : 'Dashboard'}</Link>
-                     </Button>
-                 )}
-                 {isTenant && (
-                     <Button variant="ghost" asChild>
-                         <Link href="/tenant/dashboard">Tenant Dashboard</Link> {/* TODO: Create tenant dashboard page */}
-                     </Button>
-                 )}
-                 {/* Generic Dashboard Link (if needed) */}
-                 {/* {!isAdmin && !isLandlord && !isTenant && (
-                       <Button variant="ghost" asChild>
-                           <Link href="/dashboard">Dashboard</Link>
-                       </Button>
-                 )} */}
-                 {/* Logout Button */}
+                 {/* Desktop Logout Button */}
                  <Button variant="outline" onClick={handleLogout}>
                    <LogOut className="h-4 w-4 mr-1"/> Logout
                  </Button>

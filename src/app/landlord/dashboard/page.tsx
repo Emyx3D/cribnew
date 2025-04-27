@@ -1,0 +1,135 @@
+'use client';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, MessageSquare, Home, BarChart } from "lucide-react";
+import Link from "next/link";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+// TODO: Fetch landlord specific data (listings count, messages count etc.)
+
+export default function LandlordDashboardPage() {
+    const router = useRouter();
+
+    // Basic Authentication Check
+    useEffect(() => {
+        try {
+            const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+            const userRole = sessionStorage.getItem('userRole');
+
+            if (!isLoggedIn || userRole !== 'landlord') {
+                console.warn('Unauthorized access attempt to landlord dashboard.');
+                router.push('/login'); // Redirect non-landlords or logged out users
+            }
+        } catch (error) {
+            console.error("Error accessing sessionStorage for auth check:", error);
+            router.push('/login'); // Redirect if storage access fails
+        }
+    }, [router]);
+
+    // Mock data (replace with actual fetched data)
+    const listingsCount = 3; // Example
+    const unreadMessages = 2; // Example
+    const pendingInspections = 1; // Example
+
+    return (
+        <div className="container mx-auto px-4 py-12">
+            <h1 className="text-3xl font-bold mb-8">Landlord Dashboard</h1>
+
+            {/* Quick Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Listings</CardTitle>
+                        <Home className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{listingsCount}</div>
+                        {/* <p className="text-xs text-muted-foreground">+2 since last month</p> */}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Unread Messages</CardTitle>
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{unreadMessages}</div>
+                        {/* <Link href="/landlord/dashboard/messages" className="text-xs text-primary hover:underline">View Messages</Link> */}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Pending Inspections</CardTitle>
+                        <Home className="h-4 w-4 text-muted-foreground" /> {/* Replace icon if needed */}
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{pendingInspections}</div>
+                        {/* <Link href="/landlord/dashboard/inspections" className="text-xs text-primary hover:underline">Manage Requests</Link> */}
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Action Buttons/Cards */}
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><PlusCircle className="text-primary" /> Add New Listing</CardTitle>
+                        <CardDescription>Create a new property listing to attract tenants.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                            <Link href="/landlord/dashboard/listings/new"> {/* TODO: Create this page */}
+                                Create Listing
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Home className="text-primary" /> Manage Listings</CardTitle>
+                        <CardDescription>View, edit, or deactivate your existing property listings.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild variant="outline" className="w-full">
+                            <Link href="/landlord/dashboard/listings"> {/* TODO: Create this page */}
+                                View My Listings
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                 <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><MessageSquare className="text-primary" /> Messages</CardTitle>
+                        <CardDescription>Communicate with potential tenants and manage inquiries.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild variant="outline" className="w-full">
+                            <Link href="/landlord/dashboard/messages"> {/* TODO: Create this page */}
+                                Open Messages ({unreadMessages} new)
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                 <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BarChart className="text-primary" /> Performance</CardTitle>
+                        <CardDescription>See how your listings are performing (views, contacts).</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild variant="outline" className="w-full" disabled> {/* Disabled for now */}
+                            <Link href="/landlord/dashboard/analytics"> {/* TODO: Create this page */}
+                                View Analytics (Coming Soon)
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+            </div>
+        </div>
+    );
+}
