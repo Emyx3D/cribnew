@@ -38,9 +38,8 @@ const initialFilterState: FilterValues = {
 
 interface FilterSidebarProps {
     onApplyFilters: (filters: FilterValues) => void; // Callback to parent
-    // Optional props if state needs to be managed or reset from parent
-    // initialFilters?: FilterValues | null;
-    // onReset?: () => void;
+    // Add a key prop that changes when filters should be reset
+    resetKey: number;
 }
 
 const ALL_AMENITIES = [
@@ -50,7 +49,7 @@ const ALL_AMENITIES = [
 ];
 
 
-export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
+export function FilterSidebar({ onApplyFilters, resetKey }: FilterSidebarProps) {
     // State for filter inputs - Initialize with default values
     const [location, setLocation] = useState(initialFilterState.location);
     const [propertyType, setPropertyType] = useState(initialFilterState.propertyType);
@@ -62,6 +61,23 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
     // State for the input field values (as strings), independent of slider limits
     const [minPriceInput, setMinPriceInput] = useState<string>(initialFilterState.minPrice?.toString() || ''); // Start empty
     const [maxPriceInput, setMaxPriceInput] = useState<string>(initialFilterState.maxPrice?.toString() || ''); // Start empty
+
+     // Effect to reset state when resetKey changes (and it's not the initial render)
+     useEffect(() => {
+        // Only reset if resetKey has actually changed from its initial value (e.g., 0)
+        // This prevents resetting on the first render.
+        if (resetKey > 0) {
+            console.log("Resetting FilterSidebar state...");
+            setLocation(initialFilterState.location);
+            setPropertyType(initialFilterState.propertyType);
+            setBedrooms(initialFilterState.bedrooms);
+            setSelectedAmenities(initialFilterState.amenities);
+            setMinPriceInput(initialFilterState.minPrice?.toString() || '');
+            setMaxPriceInput(initialFilterState.maxPrice?.toString() || '');
+            setSliderPriceRange([SLIDER_MIN_PRICE, SLIDER_MAX_PRICE]);
+        }
+    }, [resetKey]);
+
 
     // Update inputs when slider changes
     const handleSliderChange = (value: number[]) => {
@@ -130,17 +146,6 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
         onApplyFilters(filters);
     };
 
-    // Add a reset function if needed (e.g., if triggered by parent)
-    // const resetFilters = () => {
-    //     setLocation(initialFilterState.location);
-    //     setPropertyType(initialFilterState.propertyType);
-    //     setBedrooms(initialFilterState.bedrooms);
-    //     setSelectedAmenities(initialFilterState.amenities);
-    //     setMinPriceInput(initialFilterState.minPrice?.toString() || '');
-    //     setMaxPriceInput(initialFilterState.maxPrice?.toString() || '');
-    //     setSliderPriceRange([SLIDER_MIN_PRICE, SLIDER_MAX_PRICE]);
-    //     // If parent manages reset, call onReset?.();
-    // };
 
     return (
         <Card className="lg:w-1/4 xl:w-1/5 h-fit sticky top-20 shadow-sm">
@@ -269,3 +274,4 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
         </Card>
     );
 }
+

@@ -251,6 +251,7 @@ export default function ListingsPage() {
    const [isLoadingListings, setIsLoadingListings] = useState(false); // Add loading state for listings
    const [filtersApplied, setFiltersApplied] = useState(false); // Track if filters are active
    const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null); // Store active filters
+   const [resetFilterKey, setResetFilterKey] = useState(0); // State to trigger filter reset
 
 
     useEffect(() => {
@@ -340,9 +341,7 @@ export default function ListingsPage() {
         setDisplayedListings(allListings); // Reset to all listings
         setFiltersApplied(false); // Set filters applied state to false
         setActiveFilters(null); // Clear stored active filters
-        // TODO: Optionally reset the FilterSidebar component state as well if needed
-        // This might involve passing a reset function down or lifting state up.
-        // For now, just resetting the displayed list.
+        setResetFilterKey(prev => prev + 1); // Increment key to trigger reset in FilterSidebar
         console.log("Filters Cleared");
     }
 
@@ -377,8 +376,7 @@ export default function ListingsPage() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Filters Sidebar */}
-        {/* Pass down activeFilters and potentially a reset function if needed */}
-        <FilterSidebar onApplyFilters={applyFilters} /* initialFilters={activeFilters} onReset={clearFilters} */ />
+        <FilterSidebar onApplyFilters={applyFilters} resetKey={resetFilterKey} />
 
 
         {/* Listings Grid */}
