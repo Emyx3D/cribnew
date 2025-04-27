@@ -44,13 +44,13 @@ export default function RegisterPage() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // TODO: Implement actual registration logic (e.g., API call)
+    // TODO: Implement actual tenant registration logic (e.g., API call)
     console.log(values);
     // Simulate API call success
     toast({
-      title: "Registration Successful!",
-      description: "Welcome to CribDirect. You can now log in.",
-      variant: "default", // Use default (likely green based on theme) or explicitly "success" if defined
+      title: "Tenant Registration Successful!",
+      description: "Welcome to CribDirect. You can now log in and browse listings.",
+      variant: "default",
     });
     // Optionally redirect user after successful registration
     // router.push('/login');
@@ -61,7 +61,7 @@ export default function RegisterPage() {
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
+          <CardTitle className="text-2xl font-bold">Create Tenant Account</CardTitle>
           <CardDescription>Join CribDirect to find your next home directly from landlords.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -107,7 +107,7 @@ export default function RegisterPage() {
                 )}
               />
               <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                Register
+                Register as Tenant
               </Button>
             </form>
           </Form>
@@ -115,6 +115,12 @@ export default function RegisterPage() {
              Already have an account?{' '}
              <Link href="/login" className="font-medium text-primary hover:underline">
                Login here
+             </Link>
+           </p>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+             Want to list a property?{' '}
+             <Link href="/landlord/register" className="font-medium text-primary hover:underline">
+               Register as a Landlord
              </Link>
            </p>
         </CardContent>
