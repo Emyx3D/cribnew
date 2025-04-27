@@ -7,11 +7,59 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
+import { cn } from "@/lib/utils"; // Import cn utility
+
+const MIN_PRICE_LIMIT = 150000;
+const MAX_PRICE_LIMIT = 20000000;
 
 export function FilterSidebar() {
-    const [priceRange, setPriceRange] = useState([150000, 10000000]); // Update initial minimum price
+    // State for the selected price range [min, max]
+    const [priceRange, setPriceRange] = useState<[number, number]>([MIN_PRICE_LIMIT, MAX_PRICE_LIMIT]);
+    // State for the input field values (as strings)
+    const [minPriceInput, setMinPriceInput] = useState<string>(MIN_PRICE_LIMIT.toLocaleString());
+    const [maxPriceInput, setMaxPriceInput] = useState<string>(MAX_PRICE_LIMIT.toLocaleString());
+
+    // Update inputs when slider changes
+    const handleSliderChange = (value: number[]) => {
+        const [min, max] = value;
+        setPriceRange([min, max]);
+        setMinPriceInput(min.toLocaleString());
+        setMaxPriceInput(max.toLocaleString());
+    };
+
+    // Update slider and min price when Min Input changes
+    const handleMinInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value;
+        setMinPriceInput(rawValue); // Keep input as typed temporarily
+
+        const numericValue = parseInt(rawValue.replace(/,/g, ''), 10);
+        if (!isNaN(numericValue)) {
+            const newMin = Math.max(MIN_PRICE_LIMIT, Math.min(numericValue, priceRange[1]));
+            setPriceRange(prev => [newMin, prev[1]]);
+            // Update input formatting on blur or valid change
+        }
+    };
+
+    // Update slider and max price when Max Input changes
+    const handleMaxInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value;
+        setMaxPriceInput(rawValue); // Keep input as typed temporarily
+
+        const numericValue = parseInt(rawValue.replace(/,/g, ''), 10);
+        if (!isNaN(numericValue)) {
+             const newMax = Math.min(MAX_PRICE_LIMIT, Math.max(numericValue, priceRange[0]));
+             setPriceRange(prev => [prev[0], newMax]);
+            // Update input formatting on blur or valid change
+        }
+    };
+
+    // Format input value on blur
+    const formatInputOnBlur = (valueSetter: React.Dispatch<React.SetStateAction<string>>, currentValue: number) => {
+         valueSetter(currentValue.toLocaleString());
+    };
+
 
     return (
         <Card className="lg:w-1/4 xl:w-1/5 h-fit sticky top-20 shadow-sm">
@@ -54,20 +102,50 @@ export function FilterSidebar() {
                     </Select>
                 </div>
 
+                {/* Price Range Filter */}
                 <div className="space-y-4">
                    <Label>Price Range (₦/year)</Label>
                    <Slider
-                      defaultValue={priceRange}
-                      min={150000} // Update minimum slider value
-                      max={20000000}
-                      step={50000} // Adjusted step slightly
-                      onValueChange={(value) => setPriceRange(value)}
+                      value={priceRange} // Controlled component
+                      min={MIN_PRICE_LIMIT}
+                      max={MAX_PRICE_LIMIT}
+                      step={50000}
+                      onValueChange={handleSliderChange}
                       className="my-4"
                    />
-                   <div className="flex justify-between text-sm text-muted-foreground">
+                    {/* Min/Max Input Boxes */}
+                    <div className="flex justify-between items-center gap-2">
+                        <div className="flex-1 space-y-1">
+                             <Label htmlFor="minPrice" className="text-xs text-muted-foreground">Min Price</Label>
+                             <Input
+                                id="minPrice"
+                                type="text" // Use text to allow commas, parse later
+                                value={minPriceInput}
+                                onChange={handleMinInputChange}
+                                onBlur={() => formatInputOnBlur(setMinPriceInput, priceRange[0])}
+                                placeholder={MIN_PRICE_LIMIT.toLocaleString()}
+                                className="h-9 text-sm"
+                            />
+                        </div>
+                         <span className="text-muted-foreground pt-5">-</span>
+                        <div className="flex-1 space-y-1">
+                             <Label htmlFor="maxPrice" className="text-xs text-muted-foreground">Max Price</Label>
+                             <Input
+                                id="maxPrice"
+                                type="text" // Use text to allow commas, parse later
+                                value={maxPriceInput}
+                                onChange={handleMaxInputChange}
+                                onBlur={() => formatInputOnBlur(setMaxPriceInput, priceRange[1])}
+                                placeholder={MAX_PRICE_LIMIT.toLocaleString()}
+                                className="h-9 text-sm"
+                            />
+                        </div>
+                    </div>
+                   {/* Display current slider range (optional) */}
+                   {/* <div className="flex justify-between text-xs text-muted-foreground">
                       <span>₦{priceRange[0].toLocaleString()}</span>
                       <span>₦{priceRange[1].toLocaleString()}</span>
-                   </div>
+                   </div> */}
                 </div>
 
 
