@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Mail, Phone, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { Loader2, User, Mail, Phone, ShieldCheck, LayoutDashboard, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
 import { useRouter } from 'next/navigation';
 
 // Helper to get initials
@@ -40,8 +40,13 @@ export default function ProfilePage() {
             }
 
             setUserName(sessionStorage.getItem('userName') || '');
-            setUserEmail(sessionStorage.getItem('userEmail') || ''); // Assuming email is stored
-            setUserPhone(sessionStorage.getItem('userPhone') || ''); // Assuming phone is stored
+            // Simulate fetching email and phone if they aren't stored during login
+            // This should ideally come from your backend API based on the logged-in user
+            const storedEmail = sessionStorage.getItem('userEmail') || (sessionStorage.getItem('userName') ? `${sessionStorage.getItem('userName')?.split(' ')[0].toLowerCase()}@example.com` : ''); // Placeholder
+            const storedPhone = sessionStorage.getItem('userPhone') || '08012345678'; // Placeholder
+
+            setUserEmail(storedEmail);
+            setUserPhone(storedPhone);
             setUserRole(sessionStorage.getItem('userRole') as UserRole);
         } catch (error) {
             console.error("Error loading profile data from sessionStorage:", error);
@@ -57,10 +62,11 @@ export default function ProfilePage() {
         await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
 
         try {
-            // Update sessionStorage (in a real app, API would handle this)
+            // Update sessionStorage (in a real app, API would handle this, and you'd likely refetch data)
             sessionStorage.setItem('userName', userName);
-            sessionStorage.setItem('userEmail', userEmail);
-            sessionStorage.setItem('userPhone', userPhone);
+            // Usually email isn't updated directly, but if it were:
+            // sessionStorage.setItem('userEmail', userEmail);
+            sessionStorage.setItem('userPhone', userPhone); // Update phone in storage
 
             toast({ title: "Success", description: "Profile updated successfully." });
             setIsEditing(false);
@@ -83,6 +89,11 @@ export default function ProfilePage() {
 
     return (
         <div className="container mx-auto px-4 py-12 max-w-2xl">
+             {/* Back Button */}
+             <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+             </Button>
             <Card className="shadow-lg">
                 <CardHeader className="items-center text-center">
                     <Avatar className="h-24 w-24 mb-4">
@@ -106,7 +117,7 @@ export default function ProfilePage() {
                                     value={userName}
                                     onChange={(e) => setUserName(e.target.value)}
                                     disabled={!isEditing || isLoading}
-                                    className={!isEditing ? "border-none p-0 h-auto shadow-none" : ""}
+                                    className={!isEditing ? "border-none p-0 h-auto shadow-none bg-transparent" : ""}
                                 />
                             </div>
                         </div>
@@ -118,9 +129,9 @@ export default function ProfilePage() {
                                     id="email"
                                     type="email"
                                     value={userEmail}
-                                    onChange={(e) => setUserEmail(e.target.value)}
-                                    disabled // Usually email is not editable or requires verification
-                                    className="border-none p-0 h-auto shadow-none text-muted-foreground"
+                                    readOnly // Email should not be editable
+                                    disabled // Always disabled
+                                    className="border-none p-0 h-auto shadow-none bg-transparent text-muted-foreground cursor-not-allowed"
                                 />
                              </div>
                              {/* <p className="text-xs text-muted-foreground">Email cannot be changed.</p> */}
@@ -135,7 +146,7 @@ export default function ProfilePage() {
                                     value={userPhone}
                                     onChange={(e) => setUserPhone(e.target.value)}
                                     disabled={!isEditing || isLoading}
-                                     className={!isEditing ? "border-none p-0 h-auto shadow-none" : ""}
+                                     className={!isEditing ? "border-none p-0 h-auto shadow-none bg-transparent" : ""}
                                 />
                              </div>
                         </div>
@@ -145,7 +156,12 @@ export default function ProfilePage() {
                     <div className="flex justify-end gap-2">
                         {isEditing ? (
                             <>
-                                <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isLoading}>
+                                <Button variant="outline" onClick={() => {
+                                     setIsEditing(false);
+                                     // Reset fields to original values from storage if edit is cancelled
+                                     setUserName(sessionStorage.getItem('userName') || '');
+                                     setUserPhone(sessionStorage.getItem('userPhone') || '08012345678');
+                                }} disabled={isLoading}>
                                     Cancel
                                 </Button>
                                 <Button onClick={handleSaveChanges} disabled={isLoading}>
