@@ -6,7 +6,7 @@ import * as z from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'; // Import cn
 
 import { Button } from '@/components/ui/button';
 import {
@@ -33,10 +33,12 @@ const formSchema = z.object({
 
 // Define User Roles
 type UserRole = 'admin' | 'landlord' | 'tenant' | null;
+type VerificationStatus = 'verified' | 'pending' | 'rejected' | null; // Added verification status
 
 // Hardcoded credentials for simulation
 const adminCredentials = { email: 'Admin@cribdirect.com', password: 'Pass=1010', role: 'admin' as UserRole };
-const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' as UserRole };
+// Simulate landlord verification status
+const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' as UserRole, status: 'verified' as VerificationStatus };
 const tenantCredentials = { email: 'user@test.com', password: 'Pass=1010', role: 'tenant' as UserRole };
 
 
@@ -50,6 +52,7 @@ export default function LoginPage() {
      try {
         sessionStorage.removeItem('userRole');
         sessionStorage.removeItem('isLoggedIn');
+        sessionStorage.removeItem('landlordVerificationStatus'); // Clear verification status too
      } catch (error) {
         console.error("Error clearing sessionStorage:", error);
         // Non-critical error, maybe log it
@@ -74,6 +77,7 @@ export default function LoginPage() {
 
     let loginSuccess = false;
     let userRole: UserRole = null;
+    let landlordStatus: VerificationStatus = null; // Add variable for landlord status
     let redirectPath = '/';
 
     // Check against hardcoded credentials
@@ -85,8 +89,9 @@ export default function LoginPage() {
     } else if (values.email === landlordCredentials.email && values.password === landlordCredentials.password) {
       loginSuccess = true;
       userRole = landlordCredentials.role;
+      landlordStatus = landlordCredentials.status; // Get landlord status
       redirectPath = '/landlord/dashboard'; // Redirect landlord to their dashboard
-      console.log("Landlord login simulated");
+      console.log("Landlord login simulated with status:", landlordStatus);
     } else if (values.email === tenantCredentials.email && values.password === tenantCredentials.password) {
       loginSuccess = true;
       userRole = tenantCredentials.role;
@@ -99,6 +104,14 @@ export default function LoginPage() {
       try {
          sessionStorage.setItem('isLoggedIn', 'true');
          sessionStorage.setItem('userRole', userRole);
+         // Store verification status only if the user is a landlord
+         if (userRole === 'landlord' && landlordStatus) {
+             sessionStorage.setItem('landlordVerificationStatus', landlordStatus);
+             console.log("Stored landlord verification status:", landlordStatus);
+         } else {
+            // Clear any previous landlord status if logging in as a different role
+            sessionStorage.removeItem('landlordVerificationStatus');
+         }
       } catch (error) {
          console.error("Failed to set sessionStorage:", error);
          toast({
@@ -131,7 +144,7 @@ export default function LoginPage() {
       });
       setIsLoading(false); // Stop loading indicator on failure
     }
-  }
+  } // <-- Added missing closing brace here
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">

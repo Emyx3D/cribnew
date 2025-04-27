@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image'; // For previewing images
 
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet } from 'lucide-react';
+import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert } from 'lucide-react'; // Added ShieldAlert
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert
 
 // --- Constants ---
 const MAX_IMAGES = 5;
@@ -94,6 +95,39 @@ export default function NewListingPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [isVerified, setIsVerified] = useState<boolean | null>(null); // Add state for verification check
+
+    // Check landlord verification status
+    useEffect(() => {
+        try {
+            const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+            const role = sessionStorage.getItem('userRole');
+            // Assume status is stored, defaulting to false if not found but logged in as landlord
+            const verificationStatus = sessionStorage.getItem('landlordVerificationStatus') === 'verified';
+
+            if (!loggedIn || role !== 'landlord') {
+                router.push('/login'); // Redirect if not logged in as landlord
+                return;
+            }
+
+            setIsVerified(verificationStatus);
+
+            if (!verificationStatus) {
+                 toast({
+                    variant: 'destructive',
+                    title: "Verification Required",
+                    description: "You need to be verified to create a new listing.",
+                    duration: 5000,
+                 });
+                 // Optionally redirect back to dashboard after a delay or immediately
+                 // router.push('/landlord/dashboard');
+            }
+        } catch (error) {
+            console.error("Error checking verification status:", error);
+            router.push('/login'); // Redirect on error
+        }
+    }, [router, toast]);
+
 
     const form = useForm<ListingFormValues>({
         resolver: zodResolver(listingFormSchema),
@@ -117,6 +151,7 @@ export default function NewListingPage() {
     });
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+         if (!isVerified) return; // Prevent action if not verified
         const files = Array.from(event.target.files || []);
         const currentImageCount = fields.length;
         const availableSlots = MAX_IMAGES - currentImageCount;
@@ -155,6 +190,7 @@ export default function NewListingPage() {
     };
 
     const removeImage = (index: number) => {
+         if (!isVerified) return; // Prevent action if not verified
         URL.revokeObjectURL(imagePreviews[index]); // Clean up blob URL
         remove(index); // Remove from form array
         setImagePreviews(prev => prev.filter((_, i) => i !== index)); // Remove from previews
@@ -162,6 +198,10 @@ export default function NewListingPage() {
     };
 
     const onSubmit: SubmitHandler<ListingFormValues> = async (data) => {
+        if (!isVerified) {
+             toast({ variant: 'destructive', title: "Verification Required", description: "Cannot submit listing." });
+             return;
+        }
         setIsLoading(true);
         const imageFiles = form.getValues("images"); // Get the File objects
 
@@ -187,6 +227,29 @@ export default function NewListingPage() {
         }
         setIsLoading(false);
     };
+
+     // Show loading or verification needed message before rendering form
+    if (isVerified === null) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+
+    if (!isVerified) {
+        return (
+             <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+                <Alert variant="destructive" className="max-w-lg">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Account Not Verified</AlertTitle>
+                  <AlertDescription>
+                    Your landlord account needs to be verified by the admin team before you can create property listings. Please ensure you have submitted the required documents during registration. You will be notified once your account is approved.
+                  </AlertDescription>
+                   <Button variant="outline" size="sm" className="mt-4" onClick={() => router.push('/landlord/dashboard')}>
+                        Go to Dashboard
+                   </Button>
+                </Alert>
+             </div>
+        );
+    }
+
 
     return (
         <div className="container mx-auto px-4 py-12">
@@ -473,7 +536,7 @@ export default function NewListingPage() {
 
                             {/* --- Submission Button --- */}
                             <div className="flex justify-end pt-4">
-                                <Button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary/90" disabled={isLoading}>
+                                <Button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary/90" disabled={isLoading || !isVerified}>
                                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     {isLoading ? "Creating Listing..." : "Create Listing"}
                                 </Button>
@@ -505,3 +568,286 @@ NewListingPage.useEffectCleanup = () => {
     // }, [imagePreviews]);
     console.warn("Image preview cleanup should be handled within the component's useEffect hook.");
 };
+
+```></content>
+  </change>
+  <change>
+    <file>src/app/login/page.tsx</file>
+    <description>Store landlord verification status in session storage on successful login.</description>
+    <content><![CDATA['use client';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from 'lucide-react';
+
+const formSchema = z.object({
+  email: z.string().email({
+    message: 'Please enter a valid email address.',
+  }),
+  password: z.string().min(1, { // Password can't be empty for login
+    message: 'Password is required.',
+  }),
+});
+
+// Define User Roles
+type UserRole = 'admin' | 'landlord' | 'tenant' | null;
+type VerificationStatus = 'verified' | 'pending' | 'rejected' | null; // Added verification status
+
+// Hardcoded credentials for simulation
+const adminCredentials = { email: 'Admin@cribdirect.com', password: 'Pass=1010', role: 'admin' as UserRole };
+// Simulate landlord verification status
+const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' as UserRole, status: 'verified' as VerificationStatus };
+const tenantCredentials = { email: 'user@test.com', password: 'Pass=1010', role: 'tenant' as UserRole };
+
+
+export default function LoginPage() {
+   const { toast } = useToast();
+   const router = useRouter();
+   const [isLoading, setIsLoading] = useState(false);
+
+   // Clear session storage on component mount to ensure fresh login state
+   useEffect(() => {
+     try {
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('isLoggedIn');
+        sessionStorage.removeItem('landlordVerificationStatus'); // Clear verification status too
+     } catch (error) {
+        console.error("Error clearing sessionStorage:", error);
+        // Non-critical error, maybe log it
+     }
+   }, []);
+
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    console.log('Attempting login with:', values);
+
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    let loginSuccess = false;
+    let userRole: UserRole = null;
+    let landlordStatus: VerificationStatus = null; // Add variable for landlord status
+    let redirectPath = '/';
+
+    // Check against hardcoded credentials
+    if (values.email === adminCredentials.email && values.password === adminCredentials.password) {
+        loginSuccess = true;
+        userRole = adminCredentials.role;
+        redirectPath = '/admin/dashboard';
+        console.log("Admin login simulated");
+    } else if (values.email === landlordCredentials.email && values.password === landlordCredentials.password) {
+      loginSuccess = true;
+      userRole = landlordCredentials.role;
+      landlordStatus = landlordCredentials.status; // Get landlord status
+      redirectPath = '/landlord/dashboard'; // Redirect landlord to their dashboard
+      console.log("Landlord login simulated with status:", landlordStatus);
+    } else if (values.email === tenantCredentials.email && values.password === tenantCredentials.password) {
+      loginSuccess = true;
+      userRole = tenantCredentials.role;
+      redirectPath = '/listings'; // Redirect tenant to listings page
+      console.log("Tenant login simulated");
+    }
+
+    if (loginSuccess && userRole) {
+      // Simulate successful login by setting session storage
+      try {
+         sessionStorage.setItem('isLoggedIn', 'true');
+         sessionStorage.setItem('userRole', userRole);
+         // Store verification status only if the user is a landlord
+         if (userRole === 'landlord' && landlordStatus) {
+             sessionStorage.setItem('landlordVerificationStatus', landlordStatus);
+             console.log("Stored landlord verification status:", landlordStatus);
+         } else {
+            // Clear any previous landlord status if logging in as a different role
+            sessionStorage.removeItem('landlordVerificationStatus');
+         }
+      } catch (error) {
+         console.error("Failed to set sessionStorage:", error);
+         toast({
+            variant: 'destructive',
+            title: "Login Error",
+            description: "Could not save login session. Please check browser settings.",
+         });
+         setIsLoading(false);
+         return;
+      }
+
+      toast({
+        title: "Login Successful!",
+        description: `Welcome back ${userRole}. Redirecting...`,
+      });
+      form.reset();
+
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push(redirectPath);
+        router.refresh(); // Force refresh to update header state based on session storage
+      }, 1000);
+       // Keep loading indicator until redirect starts
+    } else {
+      // Simulate failed login
+      toast({
+        variant: 'destructive',
+        title: "Login Failed",
+        description: "Invalid email or password.",
+      });
+      setIsLoading(false); // Stop loading indicator on failure
+    }
+  }
+
+  return (
+    <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Welcome Back!</CardTitle>
+          <CardDescription>Log in to your CribDirect account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="you@example.com" {...field} disabled={isLoading} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
+                    </FormControl>
+                     <div className="text-right">
+                       <Link href="/forgot-password" // TODO: Create this page later
+                             className={cn(
+                               "text-sm font-medium text-primary hover:underline",
+                               isLoading && "pointer-events-none opacity-50" // Disable link while loading
+                              )}>
+                         Forgot password?
+                       </Link>
+                     </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Login"}
+              </Button>
+            </form>
+          </Form>
+           <p className="mt-6 text-center text-sm text-muted-foreground">
+             Don't have an account?{' '}
+             <Link href="/register" className={cn(
+                "font-medium text-primary hover:underline",
+                isLoading && "pointer-events-none opacity-50" // Disable link while loading
+                )}>
+               Sign up here
+             </Link>
+           </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```></content>
+  </change>
+  <change>
+    <file>src/components/ui/alert.tsx</file>
+    <description>Update Alert component to use updated shadcn/ui conventions.</description>
+    <content><![CDATA[import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const alertVariants = cva(
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  {
+    variants: {
+      variant: {
+        default: "bg-background text-foreground",
+        destructive:
+          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+const Alert = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
+>(({ className, variant, ...props }, ref) => (
+  <div
+    ref={ref}
+    role="alert"
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
+))
+Alert.displayName = "Alert"
+
+const AlertTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h5
+    ref={ref}
+    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    {...props}
+  />
+))
+AlertTitle.displayName = "AlertTitle"
+
+const AlertDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    {...props}
+  />
+))
+AlertDescription.displayName = "AlertDescription"
+
+export { Alert, AlertTitle, AlertDescription }
+```
