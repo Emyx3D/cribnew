@@ -1,5 +1,3 @@
-
-
 'use client'; // Add 'use client' directive
 
 import React, { useState, useEffect } from 'react'; // Import React, useState, useEffect
@@ -22,7 +20,8 @@ import {
 } from "@/components/ui/alert-dialog"; // For inspection request (example)
 import Link from 'next/link'; // Import Link
 import { useToast } from '@/hooks/use-toast'; // Import toast
-import { useRouter } from 'next/navigation'; // Import router
+import { useRouter, useSearchParams } from 'next/navigation'; // Import router
+import { use } from 'react';
 
 
 // Mock function to get listing data by ID - Replace with actual data fetching
@@ -252,11 +251,18 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   const router = useRouter(); // Initialize router
 
 
+    // Use React.use() to safely access params
+    let listingId: string;
+    try {
+        listingId = use(Promise.resolve(params.id));
+    } catch (error) {
+        console.error("Error accessing listing ID:", error);
+        return <div>Error loading listing.</div>;
+    }
+
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
-     // Access params.id inside useEffect to avoid top-level access warning
-     // Direct access is still supported in this Next.js version, despite the warning.
-    const listingId = params.id;
+
     if (!listingId) {
         console.error("Listing ID is missing from params.");
         setIsLoading(false); // Stop loading if ID is missing
@@ -286,7 +292,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [params.id, router, toast]); // Correctly pass params.id
+  }, [listingId, router, toast]);
 
 
   const handleRequestInspection = () => {
