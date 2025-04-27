@@ -124,8 +124,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="container mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 px-4 py-16 md:py-24 lg:py-32">
+      {/* Hero Section - Reduced top padding */}
+      <section className="container mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 px-4 py-12 md:py-16 lg:py-20"> {/* Reduced py-16/24/32 */}
         <div className="lg:w-1/2 space-y-6">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
             Rent Homes Directly. <br className="hidden md:block" />
