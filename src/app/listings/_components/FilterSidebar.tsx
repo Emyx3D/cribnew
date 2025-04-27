@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 
 export function FilterSidebar() {
-    const [priceRange, setPriceRange] = useState([500000, 10000000]); // Example range in Naira
+    const [priceRange, setPriceRange] = useState([150000, 10000000]); // Update initial minimum price
 
     return (
         <Card className="lg:w-1/4 xl:w-1/5 h-fit sticky top-20 shadow-sm">
@@ -58,9 +58,9 @@ export function FilterSidebar() {
                    <Label>Price Range (₦/year)</Label>
                    <Slider
                       defaultValue={priceRange}
-                      min={100000}
+                      min={150000} // Update minimum slider value
                       max={20000000}
-                      step={100000}
+                      step={50000} // Adjusted step slightly
                       onValueChange={(value) => setPriceRange(value)}
                       className="my-4"
                    />
