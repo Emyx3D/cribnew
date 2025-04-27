@@ -1,11 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form'; // Added SubmitHandler
+import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react'; // Added useRef
-import Image from 'next/image'; // For previewing images
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -21,9 +21,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video } from 'lucide-react'; // Added Video icon
+import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { GoogleMapsProvider } from '@/components/common/GoogleMapsProvider'; // Import the provider
+import { LocationAutocompleteInput } from '@/components/common/LocationAutocompleteInput'; // Import the autocomplete component
 
 // --- Constants ---
 const MIN_IMAGES = 3;
@@ -31,101 +34,85 @@ const MAX_IMAGES = 5;
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"]; // Added video types
+const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
 const ALL_AMENITIES = [
     "Water Supply", "Electricity", "Security", "Parking Space",
     "Furnished", "Air Conditioning", "Tiled Floors", "Prepaid Meter",
     "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool"
-]; // Example amenities list
+];
 
-// Custom file validation function (reusable for images and video)
 const validateFile = (file: File | undefined | null, acceptedTypes: string[], maxSize: number, fieldName: string) => {
-  if (!file) return `${fieldName} is required.`; // Adjusted message
+  if (!file) return `${fieldName} is required.`;
   if (file.size > maxSize) return `${fieldName} size should be less than ${maxSize / 1024 / 1024}MB.`;
   if (!acceptedTypes.includes(file.type)) return `Invalid file type for ${fieldName}. Only ${acceptedTypes.map(t => t.split('/')[1]).join(', ')} allowed.`;
-  return true; // Validation passed
+  return true;
 };
 
 
 // --- Zod Schema Definition ---
 const listingFormSchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters.'),
-    location: z.string().min(5, 'Location must be at least 5 characters.'),
+    location: z.string().min(5, 'Location must be at least 5 characters.'), // Keep location as string
     propertyType: z.string().min(1, 'Please select a property type.'),
-    bedrooms: z.coerce.number().min(1, 'Must have at least 1 bedroom.'), // coerce converts string from Select to number
+    bedrooms: z.coerce.number().min(1, 'Must have at least 1 bedroom.'),
     bathrooms: z.coerce.number().min(1, 'Must have at least 1 bathroom.'),
-    price: z.string().min(1, 'Price is required.').regex(/^\d+$/, "Price must be a number."), // Validate as numeric string
-    priceFrequency: z.enum(['year', 'month', 'week']), // Added 'week'
+    price: z.string().min(1, 'Price is required.').regex(/^\d+$/, "Price must be a number."),
+    priceFrequency: z.enum(['year', 'month', 'week']),
     description: z.string().min(20, 'Description must be at least 20 characters.').max(1000, 'Description too long.'),
-    amenities: z.array(z.string()).optional(), // Array of selected amenity strings
+    amenities: z.array(z.string()).optional(),
     images: z.array(z.instanceof(File))
         .min(MIN_IMAGES, `At least ${MIN_IMAGES} images are required.`)
         .max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`)
         .refine(files => files.every(file => file.size <= MAX_IMAGE_FILE_SIZE), `Each image size should be less than ${MAX_IMAGE_FILE_SIZE / 1024 / 1024}MB.`)
         .refine(files => files.every(file => ACCEPTED_IMAGE_TYPES.includes(file.type)), `Only .jpg, .jpeg, .png and .webp formats are supported for images.`),
-    video: z.instanceof(File).optional() // Optional video field
+    video: z.instanceof(File).optional()
           .refine(file => !file || validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video') === true, {
-              message: (file) => validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video') as string, // Show specific error
+              message: (file) => validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video') as string,
           }),
 });
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
 
 // --- Mock API Function ---
-// TODO: Replace with actual API call to create listing
 async function createListing(data: ListingFormValues, imageFiles: File[], videoFile?: File): Promise<{ success: boolean; error?: string; listingId?: string }> {
     console.log("Creating listing with data:", data);
     console.log("Image files:", imageFiles);
     console.log("Video file:", videoFile);
-
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Here you would typically use FormData to send data and files
-    /*
-    const formData = new FormData();
-    formData.append('title', data.title);
-    formData.append('location', data.location);
-    formData.append('propertyType', data.propertyType);
-    // ... append other text fields ...
-    data.amenities?.forEach(amenity => formData.append('amenities[]', amenity));
-    imageFiles.forEach((file, index) => formData.append(`images[${index}]`, file));
-    if (videoFile) {
-        formData.append('video', videoFile);
-    }
-
-    // const response = await fetch('/api/listings', { method: 'POST', body: formData });
-    // const result = await response.json();
-    // return result;
-    */
-
-    // Simulate success
+    // TODO: Implement actual API call with FormData
     return { success: true, listingId: `prop_${Math.random().toString(16).slice(2)}` };
 }
 // --- End Mock API Function ---
 
+// Main component wrapped with the provider
+export default function NewListingPageWrapper() {
+    return (
+        <GoogleMapsProvider>
+            <NewListingPage />
+        </GoogleMapsProvider>
+    );
+}
 
-export default function NewListingPage() {
+
+function NewListingPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-    const [videoPreview, setVideoPreview] = useState<string | null>(null); // State for video preview URL
-    const [videoFileName, setVideoFileName] = useState<string | null>(null); // State for video file name
-    const [isVerified, setIsVerified] = useState<boolean | null>(null); // Add state for verification check
-    const [imageCleanupNeeded, setImageCleanupNeeded] = useState(false); // Flag for cleanup
-    const videoInputRef = useRef<HTMLInputElement>(null); // Ref for video input
+    const [videoPreview, setVideoPreview] = useState<string | null>(null);
+    const [videoFileName, setVideoFileName] = useState<string | null>(null);
+    const [isVerified, setIsVerified] = useState<boolean | null>(null);
+    const [imageCleanupNeeded, setImageCleanupNeeded] = useState(false);
+    const videoInputRef = useRef<HTMLInputElement>(null);
 
-    // Check landlord verification status
     useEffect(() => {
         try {
             const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
             const role = sessionStorage.getItem('userRole');
-            // Assume status is stored, defaulting to false if not found but logged in as landlord
             const verificationStatus = sessionStorage.getItem('landlordVerificationStatus') === 'verified';
 
             if (!loggedIn || role !== 'landlord') {
-                router.push('/login'); // Redirect if not logged in as landlord
+                router.push('/login');
                 return;
             }
 
@@ -141,7 +128,7 @@ export default function NewListingPage() {
             }
         } catch (error) {
             console.error("Error checking verification status:", error);
-            router.push('/login'); // Redirect on error
+            router.push('/login');
         }
     }, [router, toast]);
 
@@ -161,36 +148,37 @@ export default function NewListingPage() {
             images: [],
             video: undefined,
         },
-         mode: 'onBlur', // Validate on blur for better performance
+         mode: 'onBlur',
     });
 
-     // Watch for changes in video field to update preview
     const videoFieldValue = form.watch("video");
 
     useEffect(() => {
+        let currentPreview = videoPreview; // Capture current preview URL
         if (videoFieldValue instanceof File) {
             const url = URL.createObjectURL(videoFieldValue);
             setVideoPreview(url);
             setVideoFileName(videoFieldValue.name);
-            // No immediate cleanup here, cleanup on unmount or removal
         } else {
-             // If video is removed or not a file, clear preview and name
-             if (videoPreview) {
-                 URL.revokeObjectURL(videoPreview); // Clean up old URL
-             }
             setVideoPreview(null);
             setVideoFileName(null);
         }
 
-        // Cleanup function for when the component unmounts or videoFieldValue changes *away* from a File
+        // Cleanup function
         return () => {
-             if (videoPreview && !(videoFieldValue instanceof File)) {
-                console.log("Cleaning up video preview URL on change/unmount:", videoPreview);
-                URL.revokeObjectURL(videoPreview);
-            }
+             // Revoke the URL created in *this specific effect instance* when it's cleaned up
+             if (videoPreview && videoFieldValue instanceof File && videoPreview === URL.createObjectURL(videoFieldValue)) {
+                 // Be careful comparing object URLs directly, this logic might need refinement
+                 // A safer approach is often to revoke the previous URL if it exists *before* setting a new one.
+                 console.log("Cleaning up video preview URL on change/unmount:", videoPreview);
+                 URL.revokeObjectURL(videoPreview);
+             } else if (currentPreview && !(videoFieldValue instanceof File)) {
+                 // Cleanup if the field was cleared
+                 console.log("Cleaning up video preview URL on change/unmount (field cleared):", currentPreview);
+                 URL.revokeObjectURL(currentPreview);
+             }
         };
-        // Trigger when videoFieldValue changes, but only cleanup if it's no longer a File instance
-    }, [videoFieldValue]);
+    }, [videoFieldValue]); // Removed videoPreview from dependencies
 
 
     const { fields: imageFields, append: appendImage, remove: removeImageField } = useFieldArray({
@@ -199,7 +187,7 @@ export default function NewListingPage() {
     });
 
     const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-         if (!isVerified) return; // Prevent action if not verified
+         if (!isVerified) return;
         const files = Array.from(event.target.files || []);
         const currentImageCount = imageFields.length;
         const availableSlots = MAX_IMAGES - currentImageCount;
@@ -213,7 +201,6 @@ export default function NewListingPage() {
             });
         }
 
-        // Validate and append files
         const validatedFiles: File[] = [];
         const newPreviews: string[] = [];
         filesToAdd.forEach(file => {
@@ -225,12 +212,11 @@ export default function NewListingPage() {
              newPreviews.push(URL.createObjectURL(file));
         });
 
-        appendImage(validatedFiles); // Append validated files to the form array
-        setImagePreviews(prev => [...prev, ...newPreviews]); // Update previews
-        setImageCleanupNeeded(true); // Indicate that cleanup might be needed
-        form.trigger("images"); // Manually trigger validation for the images field
+        appendImage(validatedFiles);
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+        setImageCleanupNeeded(true);
+        form.trigger("images");
 
-         // Clear the input value to allow selecting the same file again if removed
          event.target.value = '';
     };
 
@@ -239,50 +225,45 @@ export default function NewListingPage() {
          const file = event.target.files?.[0];
 
          if (file) {
-            // Validate the single video file
             const validationResult = validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video');
             if (validationResult === true) {
-                 form.setValue('video', file, { shouldValidate: true }); // Update form value and trigger validation
+                 form.setValue('video', file, { shouldValidate: true });
              } else {
                  toast({ variant: 'destructive', title: "Invalid Video", description: validationResult });
-                 form.setValue('video', undefined, { shouldValidate: true }); // Clear value if invalid
-                  // Clear the input visually
+                 form.setValue('video', undefined, { shouldValidate: true });
                  if (videoInputRef.current) {
                      videoInputRef.current.value = '';
                  }
              }
          } else {
-              form.setValue('video', undefined, { shouldValidate: true }); // Clear value if no file selected
+              form.setValue('video', undefined, { shouldValidate: true });
          }
      };
 
      const removeVideo = () => {
          if (!isVerified) return;
-         form.setValue('video', undefined, { shouldValidate: true }); // Clear form value
-         // Preview and name are cleared by the useEffect watching videoFieldValue
-          if (videoInputRef.current) { // Clear the actual file input
+         form.setValue('video', undefined, { shouldValidate: true });
+          if (videoInputRef.current) {
              videoInputRef.current.value = '';
          }
      };
 
     const removeImage = (index: number) => {
-         if (!isVerified) return; // Prevent action if not verified
-        URL.revokeObjectURL(imagePreviews[index]); // Clean up blob URL immediately
-        removeImageField(index); // Remove from form array
-        setImagePreviews(prev => prev.filter((_, i) => i !== index)); // Remove from previews
+         if (!isVerified) return;
+        URL.revokeObjectURL(imagePreviews[index]);
+        removeImageField(index);
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
         form.trigger("images");
     };
 
-    // Cleanup image object URLs on component unmount
     useEffect(() => {
-        // Only run cleanup if previews were generated
         if (imageCleanupNeeded) {
             return () => {
                 console.log("Cleaning up image previews...");
                 imagePreviews.forEach(url => URL.revokeObjectURL(url));
             };
         }
-    }, [imagePreviews, imageCleanupNeeded]); // Depend on the previews array and the flag
+    }, [imagePreviews, imageCleanupNeeded]);
 
     const onSubmit: SubmitHandler<ListingFormValues> = async (data) => {
         if (!isVerified) {
@@ -290,10 +271,9 @@ export default function NewListingPage() {
              return;
         }
         setIsLoading(true);
-        const imageFiles = form.getValues("images"); // Get the File objects
-        const videoFile = form.getValues("video"); // Get the optional File object
+        const imageFiles = form.getValues("images");
+        const videoFile = form.getValues("video");
 
-        // Call API function
         const result = await createListing(data, imageFiles, videoFile);
 
         if (result.success && result.listingId) {
@@ -301,27 +281,24 @@ export default function NewListingPage() {
                 title: "Listing Created!",
                 description: "Your property has been listed successfully.",
             });
-            // Cleanup previews before resetting/navigating
             imagePreviews.forEach(url => URL.revokeObjectURL(url));
             if (videoPreview) URL.revokeObjectURL(videoPreview);
             setImagePreviews([]);
             setVideoPreview(null);
             setVideoFileName(null);
-            setImageCleanupNeeded(false); // Reset cleanup flag
+            setImageCleanupNeeded(false);
             form.reset();
             router.push(`/listings/${result.listingId}`);
-            // Or: router.push('/landlord/dashboard/listings');
         } else {
             toast({
                 variant: "destructive",
                 title: "Failed to Create Listing",
                 description: result.error || "An unexpected error occurred.",
             });
-            setIsLoading(false); // Ensure loading is stopped on failure
+            setIsLoading(false);
         }
     };
 
-     // Show loading or verification needed message before rendering form
     if (isVerified === null) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -329,7 +306,6 @@ export default function NewListingPage() {
     if (!isVerified) {
         return (
              <div className="container mx-auto px-4 py-12 flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-                 {/* Back Button for Verification Pending state */}
                  <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6 self-start">
                      <ArrowLeft className="mr-2 h-4 w-4" />
                      Back
@@ -351,7 +327,6 @@ export default function NewListingPage() {
 
     return (
         <div className="container mx-auto px-4 py-12">
-            {/* Back Button for Form */}
             <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Dashboard
@@ -381,19 +356,15 @@ export default function NewListingPage() {
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
+                                {/* --- Location Autocomplete Input --- */}
+                                <LocationAutocompleteInput
                                     control={form.control}
                                     name="location"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-1"><MapPin className="w-4 h-4" />Location</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="e.g., Lekki Phase 1, Lagos" {...field} disabled={isLoading} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                    label="Location"
+                                    placeholder="e.g., Lekki Phase 1, Lagos"
+                                    disabled={isLoading}
                                 />
+                                {/* --- Property Details --- */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <FormField
                                         control={form.control}
@@ -415,7 +386,7 @@ export default function NewListingPage() {
                                                     <SelectItem value="terrace">Terrace House</SelectItem>
                                                     <SelectItem value="penthouse">Penthouse</SelectItem>
                                                     <SelectItem value="self-contain">Self-Contain</SelectItem>
-                                                    <SelectItem value="airbnb">Airbnb / Short Let</SelectItem> {/* Added Airbnb */}
+                                                    <SelectItem value="airbnb">Airbnb / Short Let</SelectItem>
                                                 </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -480,14 +451,14 @@ export default function NewListingPage() {
                                                     render={({ field: freqField }) => (
                                                         <Select onValueChange={freqField.onChange} defaultValue={freqField.value} disabled={isLoading}>
                                                             <FormControl>
-                                                                <SelectTrigger className="w-[130px]"> {/* Adjusted width */}
+                                                                <SelectTrigger className="w-[130px]">
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
                                                                 <SelectItem value="year">Per Year</SelectItem>
                                                                 <SelectItem value="month">Per Month</SelectItem>
-                                                                <SelectItem value="week">Per Week</SelectItem> {/* Added week */}
+                                                                <SelectItem value="week">Per Week</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                      )}
@@ -576,22 +547,22 @@ export default function NewListingPage() {
                                 <FormField
                                     control={form.control}
                                     name="images"
-                                    render={() => ( // Don't need field render prop here as we handle input separately
+                                    render={() => (
                                         <FormItem>
                                             <FormControl>
                                                  <div className="relative">
                                                     <Input
                                                         id="imageUpload"
                                                         type="file"
-                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" // Hidden input
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                                         accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                                                        multiple // Allow multiple file selection
+                                                        multiple
                                                         onChange={handleImageFileChange}
-                                                         disabled={isLoading || imageFields.length >= MAX_IMAGES} // Disable if max reached
+                                                         disabled={isLoading || imageFields.length >= MAX_IMAGES}
                                                     />
                                                     <label
-                                                        htmlFor="imageUpload" // Link label to hidden input
-                                                        className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative ${form.formState.errors.images ? 'border-destructive' : 'border-input'} ${isLoading || imageFields.length >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        htmlFor="imageUpload"
+                                                        className={cn(`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative`, form.formState.errors.images ? 'border-destructive' : 'border-input', isLoading || imageFields.length >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : '')}
                                                     >
                                                         <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
                                                         <p className="text-sm text-muted-foreground">
@@ -600,7 +571,7 @@ export default function NewListingPage() {
                                                     </label>
                                                   </div>
                                             </FormControl>
-                                            <FormMessage /> {/* Show errors related to the array itself (min/max length) */}
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -648,22 +619,22 @@ export default function NewListingPage() {
                                 <FormField
                                     control={form.control}
                                     name="video"
-                                    render={({ field }) => ( // Use field here for onChange handling
+                                    render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
                                                 <div className="relative">
                                                      <Input
                                                          id="videoUpload"
                                                          type="file"
-                                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" // Hidden input
+                                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                                          accept={ACCEPTED_VIDEO_TYPES.join(",")}
                                                          onChange={handleVideoFileChange}
-                                                         ref={videoInputRef} // Attach ref here
+                                                         ref={videoInputRef}
                                                          disabled={isLoading}
                                                      />
                                                       <label
                                                          htmlFor="videoUpload"
-                                                         className={`flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative ${form.formState.errors.video ? 'border-destructive' : 'border-input'}`}
+                                                         className={cn(`flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative`, form.formState.errors.video ? 'border-destructive' : 'border-input')}
                                                      >
                                                           {videoPreview ? (
                                                              <div className="text-center px-4 relative group">
@@ -690,7 +661,7 @@ export default function NewListingPage() {
                                                       </label>
                                                 </div>
                                             </FormControl>
-                                            <FormMessage /> {/* Show validation errors for the video */}
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />

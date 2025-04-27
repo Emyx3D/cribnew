@@ -8,6 +8,7 @@ CribDirect connects tenants directly with verified landlords, eliminating agency
 *   **Language:** TypeScript
 *   **Styling:** Tailwind CSS
 *   **UI Components:** ShadCN UI
+*   **Maps:** Google Maps Platform (Places API)
 *   **AI Integration:** Genkit (Optional, if GenAI features are used)
 *   **Hosting/Backend:** Firebase (Implied, common choice with Firebase Studio)
 *   **Package Manager:** npm
@@ -36,11 +37,16 @@ Follow these instructions to set up the project locally for development.
     ```
 
 3.  **Environment Variables:**
-    Create a `.env` file in the root of the project. If you plan to use Google AI features with Genkit, add your API key:
+    Create a `.env` file in the root of the project. Add your API keys:
     ```plaintext
+    # Optional: For Genkit AI features
     GOOGLE_GENAI_API_KEY=YOUR_GOOGLE_API_KEY
+
+    # Required: For Location Autocomplete (Google Places API)
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
     ```
-    *Note: For basic functionality without AI, this might not be strictly necessary initially.*
+    *   You need to enable the "Places API" in your Google Cloud Console project and generate an API key.
+    *   **Important:** Restrict your API key in the Google Cloud Console to prevent unauthorized use (e.g., restrict to your domain or specific APIs like Places API).
 
 4.  **VS Code Setup (Recommended):**
     *   Install recommended extensions:
@@ -72,7 +78,7 @@ Follow these instructions to set up the project locally for development.
 ## Key Project Structure
 
 *   `src/app/`: Contains the Next.js App Router pages and layouts.
-*   `src/components/`: Reusable UI components (including `ui/` for ShadCN).
+*   `src/components/`: Reusable UI components (including `ui/` for ShadCN and `common/` for custom components).
 *   `src/lib/`: Utility functions.
 *   `src/hooks/`: Custom React hooks.
 *   `src/ai/`: Genkit AI integration files (flows, prompts).

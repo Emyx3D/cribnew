@@ -25,6 +25,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video, Building, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { GoogleMapsProvider } from '@/components/common/GoogleMapsProvider'; // Import the provider
+import { LocationAutocompleteInput } from '@/components/common/LocationAutocompleteInput'; // Import the autocomplete component
+
 
 // --- Constants ---
 const MIN_IMAGES = 3;
@@ -48,12 +52,10 @@ const validateFile = (file: File | undefined | null, acceptedTypes: string[], ma
 };
 
 // --- Zod Schema Definition ---
-// Adjust schema for edit: Images and Video are optional for update,
-// unless user explicitly uploads new ones. We'll handle image/video updates separately.
 const editListingFormSchema = z.object({
-    id: z.string(), // Include ID for update reference
+    id: z.string(),
     title: z.string().min(5, 'Title must be at least 5 characters.'),
-    location: z.string().min(5, 'Location must be at least 5 characters.'),
+    location: z.string().min(5, 'Location must be at least 5 characters.'), // Keep location as string
     propertyType: z.string().min(1, 'Please select a property type.'),
     bedrooms: z.coerce.number().min(1, 'Must have at least 1 bedroom.'),
     bathrooms: z.coerce.number().min(1, 'Must have at least 1 bathroom.'),
@@ -61,10 +63,7 @@ const editListingFormSchema = z.object({
     priceFrequency: z.enum(['year', 'month', 'week']),
     description: z.string().min(20, 'Description must be at least 20 characters.').max(1000, 'Description too long.'),
     amenities: z.array(z.string()).optional(),
-    // Images: Allow undefined initially, require array if new images are uploaded.
-    // We will manage the actual File objects and existing image URLs separately.
     images: z.array(z.instanceof(File)).optional(),
-    // Video: Allow undefined initially.
     video: z.instanceof(File).optional()
         .refine(file => !file || validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video') === true, {
             message: (file) => validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video') as string,
@@ -76,31 +75,28 @@ type EditListingFormValues = z.infer<typeof editListingFormSchema>;
 // --- Mock API Functions ---
 // TODO: Replace with actual API calls
 
-// Fetch existing listing data
 async function fetchListingForEdit(id: string): Promise<EditListingFormValues | null> {
     console.log(`Fetching listing data for edit: ${id}`);
     await new Promise(resolve => setTimeout(resolve, 800));
-    // Simulate fetching from mock data or database
-    const existingListings = [ // Use the data similar to the manage listings page
+    const existingListings = [
         {
             id: 'landlord_prop1',
             title: "My Spacious 3 Bedroom Apartment",
             location: "Lekki Phase 1, Lagos",
-            price: "3500000", // Price as string number
+            price: "3500000",
             priceFrequency: 'year',
             bedrooms: 3,
             bathrooms: 4,
             imageUrl: "https://picsum.photos/seed/my_house1_exterior/400/300",
-             // Simulate existing gallery URLs (important for edit)
             existingImageUrls: [
                  "https://picsum.photos/seed/my_house1_exterior/800/600",
                  "https://picsum.photos/seed/my_house1_kitchen/800/600",
                  "https://picsum.photos/seed/my_house1_bedroom/800/600",
             ],
-            existingVideoUrl: null, // Example
+            existingVideoUrl: null,
             description: "This is the spacious 3 bedroom apartment listed by the test landlord. Excellent condition.",
             amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
-            propertyType: "apartment", // Add property type
+            propertyType: "apartment",
         },
          {
             id: 'landlord_prop2',
@@ -120,13 +116,11 @@ async function fetchListingForEdit(id: string): Promise<EditListingFormValues | 
             amenities: ["Water Supply", "Prepaid Meter"],
             propertyType: "apartment",
         },
-        // Add more listings if needed for testing
     ];
 
     const listing = existingListings.find(l => l.id === id);
     if (!listing) return null;
 
-    // Map fetched data to form values structure
     return {
         id: listing.id,
         title: listing.title,
@@ -138,79 +132,70 @@ async function fetchListingForEdit(id: string): Promise<EditListingFormValues | 
         priceFrequency: listing.priceFrequency as 'year' | 'month' | 'week',
         description: listing.description,
         amenities: listing.amenities,
-        // We don't populate 'images' or 'video' file inputs here; handle previews separately
-        images: undefined, // Start with undefined for file input
-        video: undefined,  // Start with undefined for file input
-        // Add existing URLs separately if needed by the component state
+        images: undefined,
+        video: undefined,
          ...(listing.existingImageUrls && { existingImageUrls: listing.existingImageUrls }),
          ...(listing.existingVideoUrl && { existingVideoUrl: listing.existingVideoUrl }),
     };
 }
 
 
-// Update existing listing data
 async function updateListing(
     data: Omit<EditListingFormValues, 'images' | 'video'>,
-    newImageFiles: File[], // Newly uploaded image files
-    newVideoFile?: File, // Optional new video file
-    imagesToRemove?: string[] // Array of existing image URLs to remove
+    newImageFiles: File[],
+    newVideoFile?: File,
+    imagesToRemove?: string[],
+    existingVideoRemoved?: boolean // Flag for backend
 ): Promise<{ success: boolean; error?: string; listingId?: string }> {
     console.log("Updating listing with data:", data.id, data);
     console.log("New Image files:", newImageFiles);
     console.log("New Video file:", newVideoFile);
     console.log("Images to remove:", imagesToRemove);
+    console.log("Existing video removed:", existingVideoRemoved);
 
-    // Simulate API call
+
     await new Promise(resolve => setTimeout(resolve, 1500));
-
     // TODO: Implement actual API call with FormData
-    /*
-    const formData = new FormData();
-    formData.append('id', data.id);
-    formData.append('title', data.title);
-    // ... append other text fields ...
-    data.amenities?.forEach(amenity => formData.append('amenities[]', amenity));
-    newImageFiles.forEach((file, index) => formData.append(`newImages[${index}]`, file));
-    if (newVideoFile) formData.append('newVideo', newVideoFile);
-    imagesToRemove?.forEach(url => formData.append('imagesToRemove[]', url));
 
-    // const response = await fetch(`/api/listings/${data.id}`, { method: 'PUT', body: formData });
-    // const result = await response.json();
-    // return result;
-    */
-
-    // Simulate success
     return { success: true, listingId: data.id };
 }
 // --- End Mock API Functions ---
 
-export default function EditListingPage() {
+// Main component wrapped with the provider
+export default function EditListingPageWrapper() {
+    return (
+        <GoogleMapsProvider>
+            <EditListingPage />
+        </GoogleMapsProvider>
+    );
+}
+
+
+function EditListingPage() {
     const router = useRouter();
-    const params = useParams(); // Get route parameters
-    const listingId = params.id as string; // Extract listing ID
+    const params = useParams();
+    const listingId = params.id as string;
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [isFetchingData, setIsFetchingData] = useState(true); // State for initial data fetch
-    const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Previews for *new* images
-    const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // URLs of images already saved
-    const [imagesToRemove, setImagesToRemove] = useState<string[]>([]); // Track URLs to remove
-    const [videoPreview, setVideoPreview] = useState<string | null>(null); // Preview for *new* video
-    const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null); // URL of video already saved
+    const [isFetchingData, setIsFetchingData] = useState(true);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+    const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+    const [videoPreview, setVideoPreview] = useState<string | null>(null);
+    const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
+    const [wasExistingVideoRemoved, setWasExistingVideoRemoved] = useState(false); // Track if existing video was removed
     const [videoFileName, setVideoFileName] = useState<string | null>(null);
-    const [isVerified, setIsVerified] = useState<boolean | null>(true); // Assume verified initially for edit
+    const [isVerified, setIsVerified] = useState<boolean | null>(true);
     const [imageCleanupNeeded, setImageCleanupNeeded] = useState(false);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<EditListingFormValues>({
         resolver: zodResolver(editListingFormSchema),
-        defaultValues: {
-            // Default values will be populated by fetched data
-        },
+        defaultValues: {},
         mode: 'onBlur',
     });
 
-     // Fetch listing data when component mounts
-    useEffect(() => {
+     useEffect(() => {
         if (!listingId) {
             toast({ variant: 'destructive', title: "Error", description: "Listing ID not found." });
             router.push('/landlord/dashboard/listings');
@@ -221,16 +206,12 @@ export default function EditListingPage() {
         fetchListingForEdit(listingId)
             .then(data => {
                 if (data) {
-                    form.reset(data); // Populate form with fetched data
-                    // Set existing media URLs for display
-                    setExistingImageUrls((data as any).existingImageUrls || []); // Cast to any temporarily if type doesn't include it
+                    form.reset(data);
+                    setExistingImageUrls((data as any).existingImageUrls || []);
                     setExistingVideoUrl((data as any).existingVideoUrl || null);
-                     // Ensure price is formatted correctly if needed (though it's a string)
                     form.setValue('price', String(data.price));
-                    // Ensure bedrooms/bathrooms are numbers
                     form.setValue('bedrooms', Number(data.bedrooms));
                     form.setValue('bathrooms', Number(data.bathrooms));
-
                 } else {
                     toast({ variant: 'destructive', title: "Not Found", description: "Listing could not be found for editing." });
                     router.push('/landlord/dashboard/listings');
@@ -246,7 +227,6 @@ export default function EditListingPage() {
     }, [listingId, router, toast, form]);
 
 
-    // Watch for changes in video field to update preview
     const videoFieldValue = form.watch("video");
 
      useEffect(() => {
@@ -256,34 +236,31 @@ export default function EditListingPage() {
             setVideoPreview(url);
             setVideoFileName(videoFieldValue.name);
             setExistingVideoUrl(null); // Clear existing video URL if new one is chosen
+             setWasExistingVideoRemoved(true); // If a new one is added, the old one is implicitly removed
             console.log("New video preview created:", url);
         } else {
-            // If video is removed or not a file, clear preview and name
              if (videoPreview) {
                  console.log("Revoking old video preview URL:", videoPreview);
                  URL.revokeObjectURL(videoPreview);
              }
             setVideoPreview(null);
             setVideoFileName(null);
-            // Keep existingVideoUrl if no new file is selected
         }
 
-        // Cleanup function for when the component unmounts or videoFieldValue changes *away* from a File
         return () => {
              if (url) {
                  console.log("Cleaning up video preview URL on change/unmount:", url);
                  URL.revokeObjectURL(url);
              }
         };
-    }, [videoFieldValue]);
+    }, [videoFieldValue, videoPreview]); // Added videoPreview to dependency
 
 
     const { fields: imageFields, append: appendImage, remove: removeImageField } = useFieldArray({
         control: form.control,
-        name: "images", // This manages the array of *new* File objects
+        name: "images",
     });
 
-    // Handles adding *new* images
     const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!isVerified) return;
         const files = Array.from(event.target.files || []);
@@ -310,14 +287,12 @@ export default function EditListingPage() {
             newPreviews.push(URL.createObjectURL(file));
         });
 
-        appendImage(validatedFiles); // Append validated files to the form array
-        setImagePreviews(prev => [...prev, ...newPreviews]); // Update previews for *new* images
+        appendImage(validatedFiles);
+        setImagePreviews(prev => [...prev, ...newPreviews]);
         setImageCleanupNeeded(true);
-
         event.target.value = '';
     };
 
-    // Removes a *newly added* image preview and its corresponding File object
     const removeNewImage = (index: number) => {
         if (!isVerified) return;
         console.log("Removing new image at index:", index, "Preview:", imagePreviews[index]);
@@ -326,10 +301,8 @@ export default function EditListingPage() {
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-     // Marks an *existing* image for removal
-    const markExistingImageForRemoval = (urlToRemove: string) => {
+     const markExistingImageForRemoval = (urlToRemove: string) => {
         if (!isVerified) return;
-        // Prevent removing more images than allowed (must keep at least MIN_IMAGES)
         const currentTotalImages = existingImageUrls.length + imagePreviews.length;
         const imagesMarkedForRemoval = imagesToRemove.includes(urlToRemove) ? imagesToRemove.length - 1 : imagesToRemove.length + 1;
         if (currentTotalImages - imagesMarkedForRemoval < MIN_IMAGES) {
@@ -339,8 +312,8 @@ export default function EditListingPage() {
 
         setImagesToRemove(prev =>
             prev.includes(urlToRemove)
-                ? prev.filter(url => url !== urlToRemove) // Toggle: remove if already marked
-                : [...prev, urlToRemove] // Toggle: add if not marked
+                ? prev.filter(url => url !== urlToRemove)
+                : [...prev, urlToRemove]
         );
          console.log("Toggled removal for existing image:", urlToRemove);
     };
@@ -363,25 +336,21 @@ export default function EditListingPage() {
          }
      };
 
-     // Removes *newly added* video
      const removeNewVideo = () => {
          if (!isVerified) return;
           console.log("Removing new video");
          form.setValue('video', undefined, { shouldValidate: true });
          if (videoInputRef.current) videoInputRef.current.value = '';
-         // Preview cleanup happens in useEffect
      };
 
-      // Removes *existing* video URL
      const removeExistingVideo = () => {
          if (!isVerified) return;
           console.log("Removing existing video");
          setExistingVideoUrl(null);
-         // Here you might need to set a flag or value to signal backend to delete the existing video file
+          setWasExistingVideoRemoved(true); // Explicitly mark existing video for removal
           toast({ title: "Info", description: "Existing video marked for removal. Save changes to confirm." });
      };
 
-    // Cleanup image object URLs on component unmount
     useEffect(() => {
         if (imageCleanupNeeded) {
             return () => {
@@ -394,11 +363,9 @@ export default function EditListingPage() {
         }
     }, [imagePreviews, imageCleanupNeeded]);
 
-    // Handle Form Submission
     const onSubmit: SubmitHandler<EditListingFormValues> = async (data) => {
         if (!isVerified) return;
 
-        // Validation: Ensure enough images remain after removal and addition
         const finalImageCount = existingImageUrls.length - imagesToRemove.length + imagePreviews.length;
         if (finalImageCount < MIN_IMAGES) {
             toast({ variant: 'destructive', title: "Minimum Images Required", description: `Please ensure you have at least ${MIN_IMAGES} images selected.` });
@@ -411,20 +378,17 @@ export default function EditListingPage() {
 
 
         setIsLoading(true);
-        const newImageFiles = form.getValues("images") || []; // Get the new File objects
+        const newImageFiles = form.getValues("images") || [];
         const newVideoFile = form.getValues("video");
 
-        // Prepare data for the API, excluding the File arrays
         const updateData: Omit<EditListingFormValues, 'images' | 'video'> = { ...data };
 
-        // Call API function
         const result = await updateListing(
             updateData,
             newImageFiles,
             newVideoFile,
             imagesToRemove,
-            // Add flag if existing video was removed
-            existingVideoUrl === null && videoPreview === null // Signal removal if both existing and new are null
+            wasExistingVideoRemoved // Pass the flag indicating if existing video was removed
         );
 
         if (result.success && result.listingId) {
@@ -432,17 +396,15 @@ export default function EditListingPage() {
                 title: "Listing Updated!",
                 description: "Your property details have been saved.",
             });
-            // Cleanup previews before resetting/navigating
             imagePreviews.forEach(url => URL.revokeObjectURL(url));
             if (videoPreview) URL.revokeObjectURL(videoPreview);
             setImagePreviews([]);
             setVideoPreview(null);
             setVideoFileName(null);
             setImagesToRemove([]);
+             setWasExistingVideoRemoved(false); // Reset flag
             setImageCleanupNeeded(false);
-            // form.reset(); // Optionally reset or refetch data after successful update
-            // router.push(`/listings/${result.listingId}`); // Go to view page
-            router.push('/landlord/dashboard/listings'); // Go back to manage listings page
+            router.push('/landlord/dashboard/listings');
         } else {
             toast({
                 variant: "destructive",
@@ -457,7 +419,7 @@ export default function EditListingPage() {
         return <div className="container mx-auto flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 
-    if (!isVerified) { // Should ideally check landlord verification status again
+    if (!isVerified) {
         return (
              <div className="container mx-auto px-4 py-12 flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
                  <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6 self-start">
@@ -507,17 +469,15 @@ export default function EditListingPage() {
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
+                                {/* --- Location Autocomplete Input --- */}
+                                <LocationAutocompleteInput
                                     control={form.control}
                                     name="location"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel><MapPin className="w-4 h-4 inline mr-1" />Location</FormLabel>
-                                            <FormControl><Input {...field} disabled={isLoading} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                    label="Location"
+                                    placeholder="e.g., Lekki Phase 1, Lagos"
+                                    disabled={isLoading}
                                 />
+                                {/* --- Property Details --- */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <FormField
                                         control={form.control}
@@ -687,7 +647,7 @@ export default function EditListingPage() {
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
-                                                 {index === 0 && !imagesToRemove.includes(src) && ( // Show cover label only if it's the first and not marked for removal
+                                                 {index === 0 && !imagesToRemove.includes(src) && (
                                                     <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs text-center py-0.5 rounded-b-md">
                                                         Cover
                                                     </div>
@@ -729,7 +689,7 @@ export default function EditListingPage() {
                                 {/* Input for adding NEW images */}
                                 <FormField
                                     control={form.control}
-                                    name="images" // This is just for the input trigger, not the main data source
+                                    name="images"
                                     render={() => (
                                         <FormItem>
                                             <FormControl>
@@ -741,7 +701,7 @@ export default function EditListingPage() {
                                                          disabled={isLoading || (existingImageUrls.length + imagePreviews.length - imagesToRemove.length) >= MAX_IMAGES}
                                                      />
                                                      <label htmlFor="imageUpload"
-                                                         className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative border-input ${isLoading || (existingImageUrls.length + imagePreviews.length - imagesToRemove.length) >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                         className={cn(`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative border-input`, isLoading || (existingImageUrls.length + imagePreviews.length - imagesToRemove.length) >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : '')}
                                                      >
                                                          <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
                                                          <p className="text-sm text-muted-foreground">
@@ -750,7 +710,6 @@ export default function EditListingPage() {
                                                      </label>
                                                    </div>
                                             </FormControl>
-                                            {/* Display overall image count validation error */}
                                             <FormMessage>{form.formState.errors.images?.message}</FormMessage>
                                         </FormItem>
                                     )}
@@ -802,8 +761,8 @@ export default function EditListingPage() {
                                                          accept={ACCEPTED_VIDEO_TYPES.join(",")} onChange={handleVideoFileChange} ref={videoInputRef} disabled={isLoading}
                                                      />
                                                       <label htmlFor="videoUpload"
-                                                         className={`flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative ${form.formState.errors.video ? 'border-destructive' : 'border-input'}`} >
-                                                          {videoFileName && videoPreview ? ( // Show filename if new video is selected
+                                                         className={cn(`flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative`, form.formState.errors.video ? 'border-destructive' : 'border-input')} >
+                                                          {videoFileName && videoPreview ? (
                                                              <div className="text-center px-4 relative group">
                                                                  <Video className="mx-auto h-8 w-8 mb-1 text-primary"/>
                                                                  <p className="text-sm text-foreground truncate">{videoFileName}</p>
@@ -813,12 +772,12 @@ export default function EditListingPage() {
                                                                      <Trash2 className="h-4 w-4" />
                                                                  </Button>
                                                              </div>
-                                                         ) : existingVideoUrl ? ( // Show placeholder if existing video exists
+                                                         ) : existingVideoUrl ? (
                                                              <div className="text-center text-muted-foreground">
                                                                 <Video className="mx-auto h-8 w-8 mb-2 text-primary"/>
                                                                 <p>Click or drag to replace video</p>
                                                             </div>
-                                                         ) : ( // Show upload prompt if no video exists or new selected
+                                                         ) : (
                                                               <div className="text-center text-muted-foreground">
                                                                   <UploadCloud className="mx-auto h-8 w-8 mb-2" />
                                                                   <p>Click or drag video file (Optional)</p>
@@ -849,7 +808,3 @@ export default function EditListingPage() {
     );
 }
 
-// Helper function (can be moved to utils if needed)
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
-}
