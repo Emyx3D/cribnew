@@ -1,11 +1,29 @@
+'use client'; // Add 'use client' directive
+
+import { useState } from 'react'; // Import useState
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays } from 'lucide-react';
+import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff } from 'lucide-react'; // Added Eye, EyeOff
 import Image from "next/image";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"; // For inspection request (example)
+import Link from 'next/link'; // Import Link
+import { useToast } from '@/hooks/use-toast'; // Import toast
+
 
 // Mock function to get listing data by ID - Replace with actual data fetching
+// Keep this async function outside the component or use useEffect for client-side fetching
 async function getListingData(id: string) {
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 100));
@@ -23,7 +41,7 @@ async function getListingData(id: string) {
         imageUrl: "https://picsum.photos/800/600?random=10",
         verified: true,
         amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
-        landlord: { name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
+        landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
       },
       {
         id: 2,
@@ -36,7 +54,7 @@ async function getListingData(id: string) {
         imageUrl: "https://picsum.photos/800/600?random=11",
         verified: true,
         amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
-         landlord: { name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
+         landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
       },
         {
         id: 3,
@@ -49,7 +67,7 @@ async function getListingData(id: string) {
         imageUrl: "https://picsum.photos/800/600?random=12",
         verified: false, // Example of unverified landlord
         amenities: ["Furnished", "Generator", "Air Conditioning"],
-         landlord: { name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" }, // Phone might be hidden until verified
+         landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" }, // Phone might be hidden until verified
       },
        {
         id: 4,
@@ -62,10 +80,12 @@ async function getListingData(id: string) {
         imageUrl: "https://picsum.photos/800/600?random=13",
         verified: true,
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
-         landlord: { name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
+         landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
       },
     ];
-  const listing = listings.find(l => l.id.toString() === id);
+  // Convert id param to number if mock data uses numbers
+  const listingId = parseInt(id, 10);
+  const listing = listings.find(l => l.id === listingId);
 
   if (!listing) {
     // Handle not found case - maybe redirect or show a 404 component
@@ -74,13 +94,62 @@ async function getListingData(id: string) {
   return listing;
 }
 
+// Define the expected props type based on Next.js page structure
+interface ListingDetailPageProps {
+  params: { id: string };
+}
 
-export default async function ListingDetailPage({ params }: { params: { id: string } }) {
-  const listing = await getListingData(params.id);
+// Define the listing type based on mock data structure
+// In a real app, this would likely come from a shared types file
+type ListingData = Awaited<ReturnType<typeof getListingData>>;
+
+export default function ListingDetailPage({ params }: ListingDetailPageProps) {
+  const [listing, setListing] = useState<ListingData>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showPhoneNumber, setShowPhoneNumber] = useState(false);
+  const { toast } = useToast();
+
+  // Fetch data on the client side since this is now a Client Component
+  useState(() => {
+    setIsLoading(true);
+    getListingData(params.id)
+      .then(data => {
+        setListing(data);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load listing data:", err);
+        setIsLoading(false);
+        // Optionally show an error message or redirect
+      });
+  }); // Empty dependency array means this runs once on mount
+
+  const handleRequestInspection = () => {
+      // TODO: Implement actual inspection request logic (e.g., API call)
+      console.log("Requesting inspection for listing:", listing?.id);
+       toast({
+            title: "Inspection Requested",
+            description: "Your request has been sent to the landlord. They will contact you.",
+       });
+  };
+
+  if (isLoading) {
+     // Optional: Add a loading skeleton here
+     return <div className="container mx-auto py-12 text-center">Loading listing details...</div>;
+  }
+
 
   if (!listing) {
     return <div className="container mx-auto py-12 text-center">Listing not found.</div>;
   }
+
+  // Determine if the "Send Message" button should be enabled
+  // Requires user to be logged in as a tenant (example logic)
+  let isTenantLoggedIn = false;
+  try {
+     isTenantLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true' && sessionStorage.getItem('userRole') === 'tenant';
+  } catch (e) {}
+
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -155,23 +224,57 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                          </Badge>
                     )}
                 </div>
-                {listing.landlord.verified && ( // Only show phone if verified (optional logic)
+                {listing.landlord.verified && ( // Only show phone option if verified
                  <div className="flex items-center gap-3">
                      <Phone className="w-5 h-5 text-muted-foreground"/>
-                     {/* TODO: Implement mechanism to reveal phone number on click/request if needed for privacy */}
-                     <span className="text-muted-foreground">{listing.landlord.phone}</span>
+                     {showPhoneNumber ? (
+                        <span className="text-muted-foreground">{listing.landlord.phone}</span>
+                     ) : (
+                         <Button variant="outline" size="sm" onClick={() => setShowPhoneNumber(true)}>
+                            <Eye className="w-4 h-4 mr-1" /> View Number
+                         </Button>
+                     )}
                  </div>
                 )}
 
                  <Separator/>
 
-                 {/* TODO: Implement actual messaging system */}
-                <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                    <MessageSquare className="w-4 h-4 mr-2"/> Send Message to Landlord
-                </Button>
-                <Button variant="outline" className="w-full">
-                   <CalendarDays className="w-4 h-4 mr-2"/> Request Property Inspection
-                </Button>
+                 {/* Link to message page or disable if not logged in */}
+                 {isTenantLoggedIn ? (
+                    <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
+                         {/* TODO: Update href to actual message creation/view page */}
+                         <Link href={`/messages/new?landlordId=${listing.landlord.id}&listingId=${listing.id}`}>
+                             <MessageSquare className="w-4 h-4 mr-2"/> Send Message to Landlord
+                         </Link>
+                     </Button>
+                  ) : (
+                     <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled title="Login as tenant to send message">
+                        <MessageSquare className="w-4 h-4 mr-2"/> Send Message to Landlord
+                     </Button>
+                  )}
+
+
+                 {/* Inspection Request */}
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                       <Button variant="outline" className="w-full" disabled={!isTenantLoggedIn} title={!isTenantLoggedIn ? "Login as tenant to request inspection" : ""}>
+                          <CalendarDays className="w-4 h-4 mr-2"/> Request Property Inspection
+                       </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Inspection Request</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to request an inspection for "{listing.title}"? The landlord will be notified and may contact you to schedule.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRequestInspection}>Confirm Request</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                 </AlertDialog>
+
              </CardContent>
            </Card>
         </div>
