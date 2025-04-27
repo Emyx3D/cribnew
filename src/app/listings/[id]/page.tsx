@@ -96,12 +96,9 @@ async function getListingData(id: string) {
   return listing;
 }
 
-// Define the expected props type based on Next.js page structure
-// params might be a Promise if not using 'use client', but with 'use client' it's usually direct object.
-// However, Next.js warning suggests it *might* be a promise even in client components.
+
 interface ListingDetailPageProps {
-  params: { id: string }; // Keep as string for client component direct access
-  // If params were a promise: params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 
@@ -110,11 +107,6 @@ interface ListingDetailPageProps {
 type ListingData = Awaited<ReturnType<typeof getListingData>>;
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
-  // Note: Accessing params directly works with 'use client' for now, but ideally use React.use if possible.
-  // Since React.use() cannot be used in Client Components like this (it's for Server Components/async contexts),
-  // we'll stick to direct access and rely on the dependency array in useEffect.
-  const listingId = params.id;
-
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
@@ -123,12 +115,20 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
+     // Access params.id inside useEffect to avoid top-level access warning
+    const listingId = params.id;
     if (!listingId) return; // Don't fetch if id is not available
 
     setIsLoading(true);
     getListingData(listingId)
       .then(data => {
-        setListing(data);
+        if (data) {
+            setListing(data);
+        } else {
+            // Handle listing not found (e.g., show 404 or redirect)
+            console.error("Listing not found for ID:", listingId);
+            // Optionally redirect: router.push('/404');
+        }
       })
       .catch(err => {
         console.error("Failed to load listing data:", err);
@@ -137,7 +137,8 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [listingId]); // Dependency array ensures fetch runs when id changes
+  }, [params.id]); // Dependency array ensures fetch runs when id changes
+
 
   const handleRequestInspection = () => {
       // TODO: Implement actual inspection request logic (e.g., API call)
@@ -155,15 +156,21 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
 
   if (!listing) {
-    return <div className="container mx-auto py-12 text-center">Listing not found.</div>;
+    // Improved message for when listing is definitively not found after loading
+    return <div className="container mx-auto py-12 text-center">Listing not found. It may have been removed or the link is incorrect.</div>;
   }
 
   // Determine if the "Send Message" button should be enabled
   // Requires user to be logged in as a tenant (example logic)
   let isTenantLoggedIn = false;
   try {
-     isTenantLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true' && sessionStorage.getItem('userRole') === 'tenant';
-  } catch (e) {}
+     // Check if running in a browser environment before accessing sessionStorage
+     if (typeof window !== 'undefined') {
+       isTenantLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true' && sessionStorage.getItem('userRole') === 'tenant';
+     }
+  } catch (e) {
+     console.error("Error accessing sessionStorage:", e);
+  }
 
 
   return (
@@ -304,3 +311,4 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
     </div>
   );
 }
+
