@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle } from 'lucide-react'; // Added Loader2, CheckCircle
+import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle, Search } from 'lucide-react'; // Added Loader2, CheckCircle, Search
 import Image from 'next/image';
 import Link from "next/link";
 import { FilterSidebar, FilterValues } from './_components/FilterSidebar'; // Import FilterValues type
@@ -147,6 +147,68 @@ const allListings: Listing[] = [
     amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi"],
     propertyType: "airbnb",
   },
+   {
+    id: 'landlord_prop1', // Assuming this is a string ID
+    title: "My Spacious 3 Bedroom Apartment",
+    location: "Lekki Phase 1, Lagos",
+    price: "₦3,500,000/year",
+    bedrooms: 3,
+    bathrooms: 4,
+    imageUrl: "https://picsum.photos/seed/my_house1_exterior/400/300", // Updated image
+    verified: true, // Assuming landlord is verified
+    amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
+    propertyType: "apartment",
+    },
+    // Add another listing for testing links
+     {
+        id: 'landlord_prop2', // Assuming this is a string ID
+        title: "My Cozy 2 Bedroom Flat",
+        location: "Yaba, Lagos",
+        price: "₦1,800,000/year",
+        bedrooms: 2,
+        bathrooms: 2,
+        imageUrl: "https://picsum.photos/seed/my_house2_kitchen/400/300", // Updated image
+         verified: true,
+         amenities: ["Water Supply", "Prepaid Meter"],
+         propertyType: "apartment",
+    },
+     // Add listings from FlaggedListingsTable for linking
+    {
+        id: 'prop123',
+        title: 'Luxury Penthouse with Pool',
+        location: "Banana Island, Lagos",
+        price: "₦25,000,000/year",
+        bedrooms: 4,
+        bathrooms: 5,
+        imageUrl: 'https://picsum.photos/seed/prop123_pool/400/300',
+        verified: true, // Landlord might be verified even if listing is flagged
+        amenities: ['Swimming Pool', 'Security', 'Parking Space', 'Gym'],
+        propertyType: "penthouse"
+    },
+    {
+        id: 'prop456',
+        title: 'Cozy Studio Near Market',
+        location: "Oshodi, Lagos",
+        price: "₦500,000/year",
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: 'https://picsum.photos/seed/prop456_studio/400/300',
+        verified: true,
+        amenities: ['Water Supply', 'Tiled Floors'],
+        propertyType: "studio"
+    },
+    {
+        id: 'prop789',
+        title: 'Beachfront Villa (URGENT RENT)',
+        location: "Eleko Beach, Lagos",
+        price: "₦8,000,000/year",
+        bedrooms: 5,
+        bathrooms: 6,
+        imageUrl: 'https://picsum.photos/seed/prop789_beach/400/300',
+        verified: false, // Assume landlord verification might be pending or failed
+        amenities: ['Beach Access', 'Balcony', 'Parking Space'],
+        propertyType: "duplex" // Assuming Villa maps to Duplex
+    }
 ];
 
 // Function to parse price string (e.g., "₦3,500,000/year") into numeric value and frequency
@@ -215,17 +277,19 @@ export default function ListingsPage() {
             }
 
             // Property Type Filter
-            if (filters.propertyType) {
+            if (filters.propertyType && filters.propertyType !== 'all') { // Check if not 'all'
                 filtered = filtered.filter(listing => listing.propertyType === filters.propertyType);
             }
 
             // Bedrooms Filter
-            if (filters.bedrooms) {
-                const numBedrooms = parseInt(filters.bedrooms, 10);
-                if (filters.bedrooms.includes('+')) {
-                     filtered = filtered.filter(listing => listing.bedrooms >= numBedrooms);
-                } else if (!isNaN(numBedrooms)) {
-                    filtered = filtered.filter(listing => listing.bedrooms === numBedrooms);
+            if (filters.bedrooms && filters.bedrooms !== 'all') { // Check if not 'all'
+                const numBedrooms = parseInt(filters.bedrooms.replace('+', ''), 10); // Handle '6+'
+                if (!isNaN(numBedrooms)) {
+                    if (filters.bedrooms.includes('+')) {
+                        filtered = filtered.filter(listing => listing.bedrooms >= numBedrooms);
+                    } else {
+                        filtered = filtered.filter(listing => listing.bedrooms === numBedrooms);
+                    }
                 }
             }
 
@@ -367,4 +431,3 @@ export default function ListingsPage() {
     </div>
   );
 }
-
