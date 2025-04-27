@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff, ArrowLeft } from 'lucide-react'; // Added Eye, EyeOff, ArrowLeft
+import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react'; // Added Eye, EyeOff, ArrowLeft, Loader2
 import Image from "next/image";
 import {
   AlertDialog,
@@ -26,7 +26,7 @@ import { useRouter } from 'next/navigation'; // Import router
 
 // Mock function to get listing data by ID - Replace with actual data fetching
 // Keep this async function outside the component or use useEffect for client-side fetching
-async function getListingData(id: string) {
+async function getListingData(id: string): Promise<ListingData> {
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -41,6 +41,12 @@ async function getListingData(id: string) {
         bathrooms: 4,
         description: "A well-maintained and spacious 3-bedroom flat located in a serene part of Lekki Phase 1. Features include large living areas, modern kitchen fittings, and ample parking space. Close to major roads and amenities.",
         imageUrl: "https://picsum.photos/seed/house1_livingroom_lg/800/600", // Living room for house 1
+        gallery: [ // Added gallery
+            "https://picsum.photos/seed/house1_livingroom_lg/800/600",
+            "https://picsum.photos/seed/house1_kitchen_lg/800/600",
+            "https://picsum.photos/seed/house1_bedroom_lg/800/600",
+            "https://picsum.photos/seed/house1_bathroom_lg/800/600",
+        ],
         verified: true,
         amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
         landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
@@ -54,6 +60,11 @@ async function getListingData(id: string) {
         bathrooms: 2,
          description: "A lovely and affordable 2-bedroom flat perfect for young professionals or small families. Located in the heart of Yaba with easy access to transportation. Prepaid electricity meter installed.",
         imageUrl: "https://picsum.photos/seed/house2_bedroom_lg/800/600", // Bedroom for house 2
+        gallery: [ // Added gallery
+            "https://picsum.photos/seed/house2_bedroom_lg/800/600",
+            "https://picsum.photos/seed/house2_kitchen_lg/800/600",
+            "https://picsum.photos/seed/house2_exterior_lg/800/600",
+        ],
         verified: true,
         amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
          landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
@@ -67,6 +78,11 @@ async function getListingData(id: string) {
         bathrooms: 1,
          description: "Compact and modern studio apartment in the secure and quiet Ikeja GRA. Ideal for singles. Comes furnished with basic amenities and has a backup generator.",
         imageUrl: "https://picsum.photos/seed/house3_bathroom_lg/800/600", // Bathroom for house 3
+        gallery: [ // Added gallery
+            "https://picsum.photos/seed/house3_studio_lg/800/600",
+            "https://picsum.photos/seed/house3_bathroom_lg/800/600",
+            "https://picsum.photos/seed/house3_entrance_lg/800/600",
+        ],
         verified: false, // Example of unverified landlord
         amenities: ["Furnished", "Generator", "Air Conditioning"],
          landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" }, // Phone might be hidden until verified
@@ -80,6 +96,12 @@ async function getListingData(id: string) {
         bathrooms: 5,
         description: "Large family-sized duplex in a gated estate in Magodo Phase 2. Features a private garden, ample parking, water heater in all bathrooms, and good security.",
         imageUrl: "https://picsum.photos/seed/house4_compound_lg/800/600", // Compound/Exterior for house 4
+        gallery: [ // Added gallery
+            "https://picsum.photos/seed/house4_compound_lg/800/600",
+            "https://picsum.photos/seed/house4_livingroom_lg/800/600",
+            "https://picsum.photos/seed/house4_garden_lg/800/600",
+            "https://picsum.photos/seed/house4_masterbedroom_lg/800/600",
+        ],
         verified: true,
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
          landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
@@ -91,9 +113,12 @@ async function getListingData(id: string) {
 
   if (!listing) {
     // Handle not found case - maybe redirect or show a 404 component
+    // Return null or throw an error depending on desired behavior
+    // Returning null for now to match previous structure
     return null;
   }
-  return listing;
+  // Ensure the structure matches ListingData including the gallery
+  return listing as ListingData;
 }
 
 
@@ -103,10 +128,34 @@ interface ListingDetailPageProps {
 
 
 // Define the listing type based on mock data structure
-// In a real app, this would likely come from a shared types file
-type ListingData = Awaited<ReturnType<typeof getListingData>>;
+// Add 'gallery' to the type definition
+type ListingData = {
+    id: number;
+    title: string;
+    location: string;
+    price: string;
+    bedrooms: number;
+    bathrooms: number;
+    description: string;
+    imageUrl: string;
+    gallery: string[]; // Array of image URLs
+    verified: boolean;
+    amenities: string[];
+    landlord: {
+        id: string;
+        name: string;
+        verified: boolean;
+        phone: string;
+    };
+} | null; // Allow null if not found
+
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
+  // Since React.use() cannot be used in Client Components like this (it's for Server Components/async contexts),
+  // we'll stick to direct access and rely on the dependency array in useEffect.
+  // The warning might persist, but this is the standard way for now.
+  // const listingId = params.id; // Accessing here can cause the warning if done outside useEffect
+
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
@@ -117,7 +166,13 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   useEffect(() => {
      // Access params.id inside useEffect to avoid top-level access warning
     const listingId = params.id;
-    if (!listingId) return; // Don't fetch if id is not available
+    if (!listingId) {
+        console.error("Listing ID is missing from params.");
+        setIsLoading(false); // Stop loading if ID is missing
+        // Optionally redirect or show an error message
+        // router.push('/404'); // Example redirect
+        return; // Don't fetch if id is not available
+    }
 
     setIsLoading(true);
     getListingData(listingId)
@@ -127,17 +182,20 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
         } else {
             // Handle listing not found (e.g., show 404 or redirect)
             console.error("Listing not found for ID:", listingId);
+             toast({ variant: 'destructive', title: "Not Found", description: "Listing could not be found." });
+             router.push('/listings'); // Redirect back to listings if not found
             // Optionally redirect: router.push('/404');
         }
       })
       .catch(err => {
         console.error("Failed to load listing data:", err);
+         toast({ variant: 'destructive', title: "Error", description: "Failed to load listing details." });
         // Optionally show an error message or redirect
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, [params.id]); // Dependency array ensures fetch runs when id changes
+  }, [params, router, toast]); // Use the whole params object as dependency
 
 
   const handleRequestInspection = () => {
@@ -151,13 +209,18 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
   if (isLoading) {
      // Optional: Add a loading skeleton here
-     return <div className="container mx-auto py-12 text-center">Loading listing details...</div>;
+     return (
+        <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[50vh]">
+             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
   }
 
 
   if (!listing) {
     // Improved message for when listing is definitively not found after loading
-    return <div className="container mx-auto py-12 text-center">Listing not found. It may have been removed or the link is incorrect.</div>;
+     // This state might be reached briefly before redirecting if toast/redirect logic is added above
+    return <div className="container mx-auto py-12 text-center">Listing not found or could not be loaded.</div>;
   }
 
   // Determine if the "Send Message" button should be enabled
@@ -178,13 +241,14 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
        {/* Back Button */}
        <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Listings
+          Back
        </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content (Image & Details) */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="overflow-hidden shadow-lg">
+             {/* Main Image */}
              <Image
                 src={listing.imageUrl}
                 alt={listing.title}
@@ -194,6 +258,23 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                 priority
                 unoptimized // Added for picsum consistency
               />
+             {/* Image Gallery */}
+             {listing.gallery && listing.gallery.length > 1 && (
+                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2 p-4 border-t">
+                    {listing.gallery.slice(0, 4).map((imgUrl, index) => ( // Show first 4 gallery images
+                         <Image
+                            key={index}
+                            src={imgUrl}
+                            alt={`${listing.title} - view ${index + 1}`}
+                            width={200}
+                            height={150}
+                            className="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                            unoptimized
+                            // TODO: Add onClick handler to open a lightbox/modal viewer
+                         />
+                    ))}
+                 </div>
+             )}
              <CardContent className="p-6">
                 <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
                  <div className="flex items-center text-muted-foreground mb-4 gap-1">
@@ -215,7 +296,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                 <Separator className="my-6" />
 
                 <h2 className="text-xl font-semibold mb-3">Description</h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-6 whitespace-pre-line"> {/* Use whitespace-pre-line for line breaks */}
                   {listing.description}
                 </p>
 
@@ -233,7 +314,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
         {/* Sidebar (Landlord & Actions) */}
         <div className="lg:col-span-1 space-y-6">
-           <Card className="shadow-md sticky top-20">
+           <Card className="shadow-md sticky top-20"> {/* Made sidebar sticky */}
              <CardHeader>
                 <CardTitle>Landlord Information</CardTitle>
                 <CardDescription>Contact the landlord directly for inquiries.</CardDescription>
@@ -260,7 +341,8 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                         <span className="text-muted-foreground">{listing.landlord.phone}</span>
                      ) : (
                          <Button variant="outline" size="sm" onClick={() => setShowPhoneNumber(true)} disabled={!isTenantLoggedIn} title={!isTenantLoggedIn ? "Login as tenant to view number" : ""}>
-                            <Eye className="w-4 h-4 mr-1" /> View Number
+                             {isTenantLoggedIn ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
+                             View Number
                          </Button>
                      )}
                  </div>
@@ -311,4 +393,3 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
     </div>
   );
 }
-
