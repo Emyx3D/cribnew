@@ -1,7 +1,7 @@
 
 'use client'; // Add 'use client' directive
 
-import { useState, useEffect } from 'react'; // Import useState, useEffect
+import React, { useState, useEffect } from 'react'; // Import React, useState, useEffect
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,21 +97,29 @@ async function getListingData(id: string) {
 }
 
 // Define the expected props type based on Next.js page structure
+// params might be a Promise if not using 'use client', but with 'use client' it's usually direct object.
+// However, Next.js warning suggests it *might* be a promise even in client components.
 interface ListingDetailPageProps {
-  params: { id: string };
+  params: { id: string }; // Keep as string for client component direct access
+  // If params were a promise: params: Promise<{ id: string }>;
 }
+
 
 // Define the listing type based on mock data structure
 // In a real app, this would likely come from a shared types file
 type ListingData = Awaited<ReturnType<typeof getListingData>>;
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
+  // Note: Accessing params directly works with 'use client' for now, but ideally use React.use if possible.
+  // Since React.use() cannot be used in Client Components like this (it's for Server Components/async contexts),
+  // we'll stick to direct access and rely on the dependency array in useEffect.
+  const listingId = params.id;
+
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const { toast } = useToast();
   const router = useRouter(); // Initialize router
-  const listingId = params.id; // Extract id from params for stable usage in useEffect dependency
 
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
