@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // Import useRouter
-import { useState } from 'react'; // Import useState
+import { useState, useEffect } from 'react'; // Import useState and useEffect
 import { cn } from '@/lib/utils'; // Import cn utility function
 
 import { Button } from '@/components/ui/button';
@@ -31,10 +31,22 @@ const formSchema = z.object({
   }),
 });
 
+// Hardcoded credentials
+const landlordCredentials = { email: 'landlord@test.com', password: 'Pass=1010', role: 'landlord' };
+const tenantCredentials = { email: 'user@test.com', password: 'Pass=1010', role: 'tenant' };
+// Add admin role if needed, e.g., const adminCredentials = { email: 'admin@test.com', password: 'AdminPass=1010', role: 'admin' };
+
 export default function LoginPage() {
    const { toast } = useToast();
    const router = useRouter(); // Initialize router
    const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+
+   // Clear session storage on component mount to ensure fresh login state
+   useEffect(() => {
+     sessionStorage.removeItem('userRole');
+     sessionStorage.removeItem('isLoggedIn');
+   }, []);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,49 +60,67 @@ export default function LoginPage() {
     setIsLoading(true); // Start loading indicator
     console.log('Attempting login with:', values);
 
-    // --- Start: Placeholder for Actual Login Logic ---
-    // TODO: Replace this simulation with your actual authentication API call.
-    // Example:
-    // try {
-    //   const response = await fetch('/api/auth/login', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(values),
-    //   });
-    //   if (!response.ok) {
-    //     throw new Error('Login failed');
-    //   }
-    //   const user = await response.json();
-    //   // Handle successful login (e.g., store token, redirect)
-    //   toast({ title: "Login Successful!", description: "Welcome back!" });
-    //   router.push('/dashboard'); // Redirect to dashboard or appropriate page
-    // } catch (error) {
-    //   console.error('Login error:', error);
-    //   toast({ variant: 'destructive', title: "Login Failed", description: "Invalid email or password." });
-    // } finally {
-    //   setIsLoading(false);
-    // }
-
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    // --- End: Placeholder for Actual Login Logic ---
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Simulate successful login for now
-    toast({
-      title: "Login Successful! (Simulated)",
-      description: "Welcome back to CribDirect. Redirecting...",
-    });
-    form.reset();
+    let loginSuccess = false;
+    let userRole: 'landlord' | 'tenant' | 'admin' | null = null; // Define potential roles
+    let redirectPath = '/';
 
-     // Simulate redirect after a short delay
-     setTimeout(() => {
-       // Replace '/' with the actual post-login destination, e.g., '/dashboard'
-       router.push('/');
-       setIsLoading(false); // Stop loading indicator after redirection logic starts
-     }, 1000);
+    // Check against hardcoded credentials
+    if (values.email === landlordCredentials.email && values.password === landlordCredentials.password) {
+      loginSuccess = true;
+      userRole = landlordCredentials.role;
+      redirectPath = '/admin/dashboard'; // Landlords might manage listings via admin or a dedicated dashboard
+      console.log("Landlord login simulated");
+    } else if (values.email === tenantCredentials.email && values.password === tenantCredentials.password) {
+      loginSuccess = true;
+      userRole = tenantCredentials.role;
+      redirectPath = '/listings'; // Redirect tenant to listings page
+      console.log("Tenant login simulated");
+    }
+    // Add else if block for admin credentials if implemented
 
-     // Keep loading indicator until redirection logic starts
-     // setIsLoading(false); // Moved inside setTimeout
+    if (loginSuccess && userRole) {
+      // Simulate successful login by setting session storage
+      try {
+         sessionStorage.setItem('isLoggedIn', 'true');
+         sessionStorage.setItem('userRole', userRole);
+      } catch (error) {
+         console.error("Failed to set sessionStorage:", error);
+         // Handle potential storage errors (e.g., private browsing mode)
+         toast({
+            variant: 'destructive',
+            title: "Login Error",
+            description: "Could not save login session. Please check browser settings.",
+         });
+         setIsLoading(false);
+         return; // Stop execution if storage fails
+      }
+
+
+      toast({
+        title: "Login Successful!",
+        description: `Welcome back ${userRole}. Redirecting...`,
+      });
+      form.reset();
+
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push(redirectPath);
+        router.refresh(); // Force refresh to update header state based on session storage
+        // setIsLoading(false); // Stop loading indicator after redirection logic starts - might cause flicker if kept here
+      }, 1000);
+       // Keep loading indicator until redirect starts
+    } else {
+      // Simulate failed login
+      toast({
+        variant: 'destructive',
+        title: "Login Failed",
+        description: "Invalid email or password.",
+      });
+      setIsLoading(false); // Stop loading indicator on failure
+    }
   }
 
   return (
