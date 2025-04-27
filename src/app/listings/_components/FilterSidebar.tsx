@@ -40,8 +40,8 @@ const ALL_AMENITIES = [
 export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
     // State for filter inputs
     const [location, setLocation] = useState('');
-    const [propertyType, setPropertyType] = useState('');
-    const [bedrooms, setBedrooms] = useState('');
+    const [propertyType, setPropertyType] = useState('all'); // Default to 'all'
+    const [bedrooms, setBedrooms] = useState('all'); // Default to 'all'
     const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
     // State for the selected price range [min, max] used *only* by the Slider
@@ -107,8 +107,8 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
 
         const filters: FilterValues = {
             location,
-            propertyType,
-            bedrooms,
+            propertyType: propertyType === 'all' ? '' : propertyType, // Convert 'all' back to empty string if needed by filtering logic
+            bedrooms: bedrooms === 'all' ? '' : bedrooms, // Convert 'all' back to empty string if needed
             minPrice: isNaN(minPrice as number) ? null : minPrice,
             maxPrice: isNaN(maxPrice as number) ? null : maxPrice,
             amenities: selectedAmenities,
@@ -140,7 +140,7 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
                             <SelectValue placeholder="Any Type" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">Any Type</SelectItem> {/* Add empty value */}
+                            <SelectItem value="all">Any Type</SelectItem> {/* Changed value */}
                             <SelectItem value="apartment">Apartment / Flat</SelectItem>
                             <SelectItem value="duplex">Duplex</SelectItem>
                             <SelectItem value="studio">Studio Apartment</SelectItem>
@@ -160,7 +160,7 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
                             <SelectValue placeholder="Any" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">Any</SelectItem> {/* Add empty value */}
+                            <SelectItem value="all">Any</SelectItem> {/* Changed value */}
                             <SelectItem value="1">1</SelectItem>
                             <SelectItem value="2">2</SelectItem>
                             <SelectItem value="3">3</SelectItem>
