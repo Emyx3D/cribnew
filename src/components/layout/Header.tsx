@@ -1,12 +1,22 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home } from 'lucide-react';
+import { Menu, Home, ShieldCheck } from 'lucide-react'; // Added ShieldCheck for Admin
 import { cn } from '@/lib/utils'; // Import cn if needed for conditional classes
 
+// TODO: Replace these with actual authentication and role checking logic
+// This requires fetching user state, possibly from context or a server component prop
+const useAuth = () => {
+   // Replace with your actual auth state logic
+   return {
+      isLoggedIn: false, // Example: Set to true if user is logged in
+      userRole: null, // Example: Set to 'admin', 'landlord', 'tenant'
+   };
+};
+
 export function Header() {
-  // Example: Add logic here if needed to conditionally show/hide Login/Signup
-  const isLoggedIn = false; // Placeholder: Replace with actual auth state check
+  const { isLoggedIn, userRole } = useAuth();
+  const isAdmin = userRole === 'admin'; // Check if the user is an admin
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -31,6 +41,16 @@ export function Header() {
             >
               List Your Property
             </Link>
+            {/* Admin link in desktop header */}
+            {isAdmin && (
+                 <Link
+                   href="/admin/dashboard"
+                   className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
+                 >
+                    <ShieldCheck className="h-4 w-4 mr-1" />
+                    Admin Dashboard
+                 </Link>
+            )}
              {/* Add other desktop nav links here if needed */}
           </nav>
         </div>
@@ -64,6 +84,11 @@ export function Header() {
                </Link>
                {/* Add other mobile nav links here */}
                <hr className="my-2 border-border" /> {/* Separator */}
+               {isAdmin && (
+                   <Link href="/admin/dashboard" className="text-sm hover:text-primary transition-colors flex items-center">
+                      <ShieldCheck className="h-4 w-4 mr-1"/> Admin Dashboard
+                   </Link>
+               )}
                {!isLoggedIn ? (
                  <>
                    <Link href="/register" className="text-sm hover:text-primary transition-colors">
@@ -76,11 +101,27 @@ export function Header() {
                ) : (
                  <>
                     {/* Add authenticated user links here (e.g., Dashboard, Logout) */}
-                    <Link href="/dashboard" className="text-sm hover:text-primary transition-colors">
-                      My Dashboard
-                    </Link>
-                    <Button variant="ghost" className="text-sm justify-start px-0 h-auto py-0 font-normal hover:text-primary transition-colors">
-                      Logout {/* TODO: Implement logout functionality */}
+                    {/* Example: Conditionally show different dashboard based on role */}
+                    {userRole === 'landlord' && (
+                       <Link href="/landlord/dashboard" className="text-sm hover:text-primary transition-colors">
+                          My Landlord Dashboard
+                       </Link>
+                    )}
+                     {userRole === 'tenant' && (
+                       <Link href="/tenant/dashboard" className="text-sm hover:text-primary transition-colors">
+                          My Tenant Dashboard
+                       </Link>
+                    )}
+                    {/* Fallback dashboard if roles aren't specific or for other roles */}
+                    {!isAdmin && userRole !== 'landlord' && userRole !== 'tenant' && (
+                       <Link href="/dashboard" className="text-sm hover:text-primary transition-colors">
+                         My Dashboard
+                       </Link>
+                    )}
+
+                    {/* TODO: Implement actual logout functionality */}
+                    <Button variant="ghost" className="text-sm justify-start px-0 h-auto py-0 font-normal hover:text-primary transition-colors" onClick={() => console.log('Logout clicked')}>
+                      Logout
                     </Button>
                  </>
                )}
@@ -105,11 +146,30 @@ export function Header() {
            ) : (
               <>
                 {/* Add authenticated user buttons here (e.g., Profile, Logout) */}
-                 <Button variant="ghost" asChild>
-                   <Link href="/dashboard">Dashboard</Link>
-                 </Button>
-                 <Button variant="outline">
-                   Logout {/* TODO: Implement logout functionality */}
+                 {/* Example: Conditionally show different dashboard based on role */}
+                 {isAdmin && (
+                     <Button variant="ghost" asChild>
+                         <Link href="/admin/dashboard">Admin</Link>
+                     </Button>
+                 )}
+                 {userRole === 'landlord' && (
+                     <Button variant="ghost" asChild>
+                         <Link href="/landlord/dashboard">Landlord Dashboard</Link>
+                     </Button>
+                 )}
+                 {userRole === 'tenant' && (
+                     <Button variant="ghost" asChild>
+                         <Link href="/tenant/dashboard">Tenant Dashboard</Link>
+                     </Button>
+                 )}
+                  {!isAdmin && userRole !== 'landlord' && userRole !== 'tenant' && (
+                       <Button variant="ghost" asChild>
+                           <Link href="/dashboard">Dashboard</Link>
+                       </Button>
+                 )}
+                 {/* TODO: Implement actual logout functionality */}
+                 <Button variant="outline" onClick={() => console.log('Logout clicked')}>
+                   Logout
                  </Button>
               </>
            )}

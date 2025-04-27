@@ -18,33 +18,47 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileCheck, UserSquare } from 'lucide-react'; // Added UserSquare icon
+import { FileCheck, UserSquare } from 'lucide-react'; // Removed Upload, kept FileCheck and UserSquare
 import { useState } from 'react';
+// TODO: Import actual server action for registration
+// import { registerLandlord } from '@/actions/authActions';
 
 // Define maximum file size (e.g., 5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 // Define acceptable file types
 const ACCEPTED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-const fileSchema = z.any()
-  .refine((files) => files?.length == 1, 'File is required.')
-  .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `File size should be less than 5MB.`)
-  .refine(
-    (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
-    "Only .pdf, .jpg, .jpeg, .png and .webp formats are supported."
-  );
+// Custom file validation function
+const validateFile = (files: FileList | undefined | null, acceptedTypes: string[], maxSize: number) => {
+  if (!files || files.length === 0) return "File is required.";
+  const file = files[0];
+  if (file.size > maxSize) return `File size should be less than ${maxSize / 1024 / 1024}MB.`;
+  if (!acceptedTypes.includes(file.type)) return `Only ${acceptedTypes.map(t => t.split('/')[1]).join(', ')} formats are supported.`;
+  return true; // Validation passed
+};
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   phone: z.string().min(10, { message: 'Please enter a valid phone number.' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
-  validIdCard: fileSchema.describe("Valid Government Issued ID Card (e.g., NIN Slip, Driver's License)"),
-  proofOfOwnership: fileSchema.describe("Proof of Property Ownership (e.g., C of O, Deed of Assignment)")
+  validIdCard: z.custom<FileList>()
+    .refine(files => validateFile(files, ACCEPTED_FILE_TYPES, MAX_FILE_SIZE) === true, {
+       message: (files) => validateFile(files, ACCEPTED_FILE_TYPES, MAX_FILE_SIZE) as string // Show the specific error message
+    })
+    .describe("Valid Government Issued ID Card (e.g., NIN Slip, Driver's License)"),
+  proofOfOwnership: z.custom<FileList>()
+   .refine(files => validateFile(files, ACCEPTED_FILE_TYPES, MAX_FILE_SIZE) === true, {
+      message: (files) => validateFile(files, ACCEPTED_FILE_TYPES, MAX_FILE_SIZE) as string // Show the specific error message
+   })
+   .describe("Proof of Property Ownership (e.g., C of O, Deed of Assignment)")
 });
+
 
 export default function LandlordRegisterPage() {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [idFileName, setIdFileName] = useState<string | null>(null);
   const [proofFileName, setProofFileName] = useState<string | null>(null);
 
@@ -58,28 +72,80 @@ export default function LandlordRegisterPage() {
       validIdCard: undefined,
       proofOfOwnership: undefined,
     },
+     mode: "onChange", // Validate on change to give immediate feedback
   });
 
   // Get refs for file inputs using register
   const idFileRef = form.register("validIdCard");
   const proofFileRef = form.register("proofOfOwnership");
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+     setIsLoading(true);
+    console.log('Form Values:', values);
+    const validIdFile = values.validIdCard[0];
+    const proofFile = values.proofOfOwnership[0];
+    console.log('Valid ID File:', validIdFile);
+    console.log('Proof of Ownership File:', proofFile);
+
     // TODO: Implement actual landlord registration and document upload logic
     // This will involve sending the form data AND the files to your backend API
-    console.log('Form Values:', values);
-    console.log('Valid ID File:', values.validIdCard[0]);
-    console.log('Proof of Ownership File:', values.proofOfOwnership[0]);
+    // using a server action or API route.
+    // Example using a hypothetical server action:
+    /*
+    try {
+      const formData = new FormData();
+      formData.append('name', values.name);
+      formData.append('email', values.email);
+      formData.append('phone', values.phone);
+      formData.append('password', values.password);
+      formData.append('validIdCard', validIdFile);
+      formData.append('proofOfOwnership', proofFile);
 
-    // Simulate API call success
-    toast({
-      title: "Registration Submitted!",
-      description: "Your landlord account request and documents have been submitted for verification. We'll notify you once approved.",
-      variant: "default",
-    });
+      // const result = await registerLandlord(formData); // Replace with your actual server action
+
+      // if (result.success) {
+          toast({
+            title: "Registration Submitted!",
+            description: "Your landlord account request and documents have been submitted for verification. We'll notify you via email once approved.",
+            variant: "default",
+          });
+          form.reset(); // Reset form
+          setIdFileName(null); // Clear ID file name display
+          setProofFileName(null); // Clear proof file name display
+      // } else {
+      //   toast({
+      //     title: "Registration Failed",
+      //     description: result.error || "An error occurred. Please try again.",
+      //     variant: "destructive",
+      //   });
+      // }
+
+    } catch (error) {
+       console.error("Registration error:", error);
+       toast({
+         title: "Registration Failed",
+         description: "An unexpected error occurred. Please try again later.",
+         variant: "destructive",
+       });
+    } finally {
+       setIsLoading(false);
+    }
+    */
+
+    // Simulate API call delay and success for now
+     await new Promise(resolve => setTimeout(resolve, 1500));
+      toast({
+            title: "Registration Submitted!",
+            description: "Your landlord account request and documents have been submitted for verification. We'll notify you via email once approved.", // Updated message
+            variant: "default",
+      });
      form.reset(); // Reset form
      setIdFileName(null); // Clear ID file name display
      setProofFileName(null); // Clear proof file name display
+     setIsLoading(false);
+
+     // TODO: Optionally redirect to a "pending verification" page or dashboard
+     // router.push('/landlord/pending');
   }
 
   return (
@@ -100,7 +166,7 @@ export default function LandlordRegisterPage() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Landlord's Full Name" {...field} />
+                      <Input placeholder="Landlord's Full Name" {...field} disabled={isLoading}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -114,7 +180,7 @@ export default function LandlordRegisterPage() {
                      <FormItem>
                        <FormLabel>Email Address</FormLabel>
                        <FormControl>
-                         <Input type="email" placeholder="landlord@example.com" {...field} />
+                         <Input type="email" placeholder="landlord@example.com" {...field} disabled={isLoading}/>
                        </FormControl>
                        <FormMessage />
                      </FormItem>
@@ -127,7 +193,7 @@ export default function LandlordRegisterPage() {
                      <FormItem>
                        <FormLabel>Phone Number</FormLabel>
                        <FormControl>
-                         <Input type="tel" placeholder="08012345678" {...field} />
+                         <Input type="tel" placeholder="08012345678" {...field} disabled={isLoading}/>
                        </FormControl>
                        <FormMessage />
                      </FormItem>
@@ -141,7 +207,7 @@ export default function LandlordRegisterPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" {...field} disabled={isLoading}/>
                     </FormControl>
                      <FormDescription>
                         Must be at least 8 characters long.
@@ -155,7 +221,7 @@ export default function LandlordRegisterPage() {
                <FormField
                 control={form.control}
                 name="validIdCard"
-                render={({ field: { onChange, onBlur, name } }) => (
+                render={() => ( // Removed field destructuring as we use register ref
                   <FormItem>
                     <FormLabel>Valid ID Card</FormLabel>
                     <FormControl>
@@ -165,15 +231,18 @@ export default function LandlordRegisterPage() {
                           type="file"
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" // Hide default input, make area clickable
                            accept={ACCEPTED_FILE_TYPES.join(",")} // Specify acceptable file types
+                          // Use onChange from the ref provided by register
                           onChange={(e) => {
-                             onChange(e.target.files); // Pass FileList to react-hook-form
+                             idFileRef.onChange(e); // Call the original onChange from register
+                             form.setValue('validIdCard', e.target.files as FileList, { shouldValidate: true }); // Manually update form value and trigger validation
                              setIdFileName(e.target.files?.[0]?.name ?? null); // Update displayed file name
                           }}
-                          onBlur={onBlur}
-                          name={name}
+                          onBlur={idFileRef.onBlur} // Use onBlur from register
+                          name={idFileRef.name} // Use name from register
                           ref={idFileRef.ref} // Use the ref from register
+                          disabled={isLoading}
                         />
-                        <div className="flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md border-input bg-background hover:bg-muted cursor-pointer relative">
+                        <div className={`flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md border-input bg-background hover:bg-muted cursor-pointer relative ${form.formState.errors.validIdCard ? 'border-destructive' : ''}`}>
                            {idFileName ? (
                              <p className="text-sm text-foreground px-4 text-center">{idFileName}</p>
                            ) : (
@@ -198,7 +267,7 @@ export default function LandlordRegisterPage() {
               <FormField
                 control={form.control}
                 name="proofOfOwnership"
-                render={({ field: { onChange, onBlur, name } }) => (
+                render={() => ( // Removed field destructuring as we use register ref
                   <FormItem>
                     <FormLabel>Proof of Property Ownership</FormLabel>
                     <FormControl>
@@ -208,15 +277,18 @@ export default function LandlordRegisterPage() {
                           type="file"
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" // Hide default input, make area clickable
                           accept={ACCEPTED_FILE_TYPES.join(",")} // Specify acceptable file types
+                          // Use onChange from the ref provided by register
                           onChange={(e) => {
-                             onChange(e.target.files); // Pass FileList to react-hook-form
+                             proofFileRef.onChange(e); // Call the original onChange from register
+                             form.setValue('proofOfOwnership', e.target.files as FileList, { shouldValidate: true }); // Manually update form value and trigger validation
                              setProofFileName(e.target.files?.[0]?.name ?? null); // Update displayed file name
                           }}
-                          onBlur={onBlur}
-                          name={name}
+                          onBlur={proofFileRef.onBlur} // Use onBlur from register
+                          name={proofFileRef.name} // Use name from register
                           ref={proofFileRef.ref} // Use the ref from register
+                          disabled={isLoading}
                         />
-                        <div className="flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md border-input bg-background hover:bg-muted cursor-pointer relative">
+                       <div className={`flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md border-input bg-background hover:bg-muted cursor-pointer relative ${form.formState.errors.proofOfOwnership ? 'border-destructive' : ''}`}>
                            {proofFileName ? (
                              <p className="text-sm text-foreground px-4 text-center">{proofFileName}</p>
                            ) : (
@@ -238,8 +310,8 @@ export default function LandlordRegisterPage() {
               />
 
 
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                Register as Landlord
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
+                {isLoading ? "Submitting..." : "Register as Landlord"}
               </Button>
             </form>
           </Form>
