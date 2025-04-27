@@ -7,14 +7,14 @@ export function Footer() {
         <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
           Built by{' '}
           <Link
-            href="#" // Replace with actual link if available
+            href="https://www.emyx3d.com"
             target="_blank"
             rel="noreferrer"
             className="font-medium underline underline-offset-4"
           >
-            Your Name/Company
+            EMyxBuiltiT
           </Link>
-          . © {new Date().getFullYear()} CribDirect. All rights reserved.
+          . © 2025 CribDirect. All rights reserved.
         </p>
         <nav className="flex gap-4 items-center text-sm text-muted-foreground">
            <Link href="/terms" className="hover:text-foreground">Terms of Service</Link>
