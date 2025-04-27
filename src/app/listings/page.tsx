@@ -4,11 +4,12 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle, Search } from 'lucide-react'; // Added Loader2, CheckCircle, Search
+import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle, Search, XCircle } from 'lucide-react'; // Added Loader2, CheckCircle, Search, XCircle
 import Image from 'next/image';
 import Link from "next/link";
 import { FilterSidebar, FilterValues } from './_components/FilterSidebar'; // Import FilterValues type
 import { useEffect, useState } from 'react';
+import { cn } from "@/lib/utils"; // Import cn for conditional styling
 
 // Define Advertisement type (should match ManageAdvertsTable)
 type Advertisement = {
@@ -248,6 +249,8 @@ export default function ListingsPage() {
    const [isLoadingAds, setIsLoadingAds] = useState(true);
    const [displayedListings, setDisplayedListings] = useState<Listing[]>(allListings); // Start with all listings
    const [isLoadingListings, setIsLoadingListings] = useState(false); // Add loading state for listings
+   const [filtersApplied, setFiltersApplied] = useState(false); // Track if filters are active
+   const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null); // Store active filters
 
 
     useEffect(() => {
@@ -264,6 +267,18 @@ export default function ListingsPage() {
     const applyFilters = (filters: FilterValues) => {
         console.log("Filtering with:", filters);
         setIsLoadingListings(true); // Start loading indicator
+        setActiveFilters(filters); // Store the applied filters
+
+        // Determine if any filter is actually set
+        const isAnyFilterSet =
+            filters.location ||
+            filters.propertyType ||
+            filters.bedrooms ||
+            filters.minPrice !== null ||
+            filters.maxPrice !== null ||
+            filters.amenities.length > 0;
+
+        setFiltersApplied(isAnyFilterSet); // Update filter applied state
 
         // Simulate filtering delay
         setTimeout(() => {
@@ -320,6 +335,17 @@ export default function ListingsPage() {
         }, 500); // Simulate network/computation delay
     };
 
+    // Function to clear filters
+    const clearFilters = () => {
+        setDisplayedListings(allListings); // Reset to all listings
+        setFiltersApplied(false); // Set filters applied state to false
+        setActiveFilters(null); // Clear stored active filters
+        // TODO: Optionally reset the FilterSidebar component state as well if needed
+        // This might involve passing a reset function down or lifting state up.
+        // For now, just resetting the displayed list.
+        console.log("Filters Cleared");
+    }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Available Properties</h1>
@@ -351,10 +377,22 @@ export default function ListingsPage() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Filters Sidebar */}
-        <FilterSidebar onApplyFilters={applyFilters} />
+        {/* Pass down activeFilters and potentially a reset function if needed */}
+        <FilterSidebar onApplyFilters={applyFilters} /* initialFilters={activeFilters} onReset={clearFilters} */ />
+
 
         {/* Listings Grid */}
         <div className="flex-1">
+            {/* Clear Filters Button */}
+            {filtersApplied && (
+                 <div className="mb-4 flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Showing filtered results</span>
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                         <XCircle className="mr-2 h-4 w-4" /> Clear Filters
+                    </Button>
+                 </div>
+             )}
+
            {isLoadingListings ? (
               <div className="flex justify-center items-center py-20">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -363,7 +401,12 @@ export default function ListingsPage() {
               <div className="text-center py-20 border border-dashed rounded-lg">
                   <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4"/>
                   <h2 className="text-xl font-semibold mb-2">No Properties Found</h2>
-                  <p className="text-muted-foreground">Try adjusting your filters.</p>
+                  <p className="text-muted-foreground">Try adjusting your filters or clear them to see all listings.</p>
+                  {filtersApplied && (
+                       <Button variant="link" onClick={clearFilters} className="mt-2">
+                           Clear Filters
+                       </Button>
+                   )}
               </div>
            ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

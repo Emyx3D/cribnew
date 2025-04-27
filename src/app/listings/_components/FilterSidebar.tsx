@@ -26,8 +26,21 @@ export type FilterValues = {
     amenities: string[];
 };
 
+// Initial state definition (useful for resetting)
+const initialFilterState: FilterValues = {
+    location: '',
+    propertyType: 'all',
+    bedrooms: 'all',
+    minPrice: null,
+    maxPrice: null,
+    amenities: [],
+};
+
 interface FilterSidebarProps {
     onApplyFilters: (filters: FilterValues) => void; // Callback to parent
+    // Optional props if state needs to be managed or reset from parent
+    // initialFilters?: FilterValues | null;
+    // onReset?: () => void;
 }
 
 const ALL_AMENITIES = [
@@ -38,17 +51,17 @@ const ALL_AMENITIES = [
 
 
 export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
-    // State for filter inputs
-    const [location, setLocation] = useState('');
-    const [propertyType, setPropertyType] = useState('all'); // Default to 'all'
-    const [bedrooms, setBedrooms] = useState('all'); // Default to 'all'
-    const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+    // State for filter inputs - Initialize with default values
+    const [location, setLocation] = useState(initialFilterState.location);
+    const [propertyType, setPropertyType] = useState(initialFilterState.propertyType);
+    const [bedrooms, setBedrooms] = useState(initialFilterState.bedrooms);
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>(initialFilterState.amenities);
 
     // State for the selected price range [min, max] used *only* by the Slider
     const [sliderPriceRange, setSliderPriceRange] = useState<[number, number]>([SLIDER_MIN_PRICE, SLIDER_MAX_PRICE]);
     // State for the input field values (as strings), independent of slider limits
-    const [minPriceInput, setMinPriceInput] = useState<string>(''); // Start empty
-    const [maxPriceInput, setMaxPriceInput] = useState<string>(''); // Start empty
+    const [minPriceInput, setMinPriceInput] = useState<string>(initialFilterState.minPrice?.toString() || ''); // Start empty
+    const [maxPriceInput, setMaxPriceInput] = useState<string>(initialFilterState.maxPrice?.toString() || ''); // Start empty
 
     // Update inputs when slider changes
     const handleSliderChange = (value: number[]) => {
@@ -117,6 +130,18 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
         onApplyFilters(filters);
     };
 
+    // Add a reset function if needed (e.g., if triggered by parent)
+    // const resetFilters = () => {
+    //     setLocation(initialFilterState.location);
+    //     setPropertyType(initialFilterState.propertyType);
+    //     setBedrooms(initialFilterState.bedrooms);
+    //     setSelectedAmenities(initialFilterState.amenities);
+    //     setMinPriceInput(initialFilterState.minPrice?.toString() || '');
+    //     setMaxPriceInput(initialFilterState.maxPrice?.toString() || '');
+    //     setSliderPriceRange([SLIDER_MIN_PRICE, SLIDER_MAX_PRICE]);
+    //     // If parent manages reset, call onReset?.();
+    // };
+
     return (
         <Card className="lg:w-1/4 xl:w-1/5 h-fit sticky top-20 shadow-sm">
             <CardHeader>
@@ -140,7 +165,7 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
                             <SelectValue placeholder="Any Type" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Any Type</SelectItem> {/* Changed value */}
+                            <SelectItem value="all">Any Type</SelectItem>
                             <SelectItem value="apartment">Apartment / Flat</SelectItem>
                             <SelectItem value="duplex">Duplex</SelectItem>
                             <SelectItem value="studio">Studio Apartment</SelectItem>
@@ -160,7 +185,7 @@ export function FilterSidebar({ onApplyFilters }: FilterSidebarProps) {
                             <SelectValue placeholder="Any" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Any</SelectItem> {/* Changed value */}
+                            <SelectItem value="all">Any</SelectItem>
                             <SelectItem value="1">1</SelectItem>
                             <SelectItem value="2">2</SelectItem>
                             <SelectItem value="3">3</SelectItem>
