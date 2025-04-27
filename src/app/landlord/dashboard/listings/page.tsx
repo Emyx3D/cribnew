@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BedDouble, Bath, MapPin, Wallet, Pencil, Trash2, Eye, Loader2, PlusCircle, MessageSquare } from 'lucide-react'; // Added MessageSquare
+import { BedDouble, Bath, MapPin, Wallet, Pencil, Trash2, Eye, Loader2, PlusCircle, MessageSquare, ArrowLeft } from 'lucide-react'; // Added MessageSquare, ArrowLeft
 import Image from 'next/image';
 import Link from "next/link";
 import { useToast } from '@/hooks/use-toast';
@@ -164,6 +164,11 @@ export default function ManageListingsPage() {
 
     return (
         <div className="container mx-auto px-4 py-12">
+             {/* Back Button */}
+             <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+             </Button>
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold">Manage My Listings</h1>
                  <Button asChild>

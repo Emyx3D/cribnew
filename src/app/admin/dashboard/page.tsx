@@ -10,6 +10,9 @@ import { ManageStaffTable } from "./_components/ManageStaffTable";
 import { ManageAdvertsTable } from "./_components/ManageAdvertsTable"; // Import the new Adverts component
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button"; // Import Button
+import { ArrowLeft } from "lucide-react"; // Import ArrowLeft
+
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -33,6 +36,11 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
+       {/* Back Button */}
+       <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+       </Button>
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
       <Tabs defaultValue="verification" className="w-full">

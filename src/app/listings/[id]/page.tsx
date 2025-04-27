@@ -1,11 +1,11 @@
 'use client'; // Add 'use client' directive
 
-import { useState } from 'react'; // Import useState
+import { useState, useEffect } from 'react'; // Import useState, useEffect
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff } from 'lucide-react'; // Added Eye, EyeOff
+import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff, ArrowLeft } from 'lucide-react'; // Added Eye, EyeOff, ArrowLeft
 import Image from "next/image";
 import {
   AlertDialog,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog"; // For inspection request (example)
 import Link from 'next/link'; // Import Link
 import { useToast } from '@/hooks/use-toast'; // Import toast
+import { useRouter } from 'next/navigation'; // Import router
 
 
 // Mock function to get listing data by ID - Replace with actual data fetching
@@ -108,9 +109,10 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const { toast } = useToast();
+  const router = useRouter(); // Initialize router
 
   // Fetch data on the client side since this is now a Client Component
-  useState(() => {
+  useEffect(() => { // Changed useState(() => {}) to useEffect(() => {}) for clarity
     setIsLoading(true);
     getListingData(params.id)
       .then(data => {
@@ -122,7 +124,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
         setIsLoading(false);
         // Optionally show an error message or redirect
       });
-  }); // Empty dependency array means this runs once on mount
+  }, [params.id]); // Dependency array ensures fetch runs when id changes
 
   const handleRequestInspection = () => {
       // TODO: Implement actual inspection request logic (e.g., API call)
@@ -153,6 +155,12 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-12">
+       {/* Back Button */}
+       <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Listings
+       </Button>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content (Image & Details) */}
         <div className="lg:col-span-2 space-y-6">
@@ -230,7 +238,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                      {showPhoneNumber ? (
                         <span className="text-muted-foreground">{listing.landlord.phone}</span>
                      ) : (
-                         <Button variant="outline" size="sm" onClick={() => setShowPhoneNumber(true)}>
+                         <Button variant="outline" size="sm" onClick={() => setShowPhoneNumber(true)} disabled={!isTenantLoggedIn} title={!isTenantLoggedIn ? "Login as tenant to view number" : ""}>
                             <Eye className="w-4 h-4 mr-1" /> View Number
                          </Button>
                      )}

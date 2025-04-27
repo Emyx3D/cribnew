@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, ShieldCheck, LogOut, User, LayoutDashboard } from 'lucide-react'; // Added User, LayoutDashboard
+import { Menu, Home, ShieldCheck, LogOut, User, LayoutDashboard, ArrowLeft } from 'lucide-react'; // Added ArrowLeft for back button, kept others
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -16,8 +16,10 @@ type UserRole = 'admin' | 'landlord' | 'tenant' | null;
 const useAuth = () => {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
    const [userRole, setUserRole] = useState<UserRole>(null);
+   const [isMounted, setIsMounted] = useState(false); // Track if component is mounted
 
    useEffect(() => {
+     setIsMounted(true); // Component has mounted
      // Check session storage on mount (client-side only)
      try {
        const loggedInStatus = sessionStorage.getItem('isLoggedIn') === 'true';
@@ -32,13 +34,13 @@ const useAuth = () => {
         setUserRole(null);
      }
 
-   }, []);
+   }, []); // Run only once on mount
 
-   return { isLoggedIn, userRole };
+   return { isLoggedIn, userRole, isMounted }; // Return isMounted
 };
 
 export function Header() {
-  const { isLoggedIn, userRole } = useAuth();
+  const { isLoggedIn, userRole, isMounted } = useAuth(); // Get isMounted
   const router = useRouter();
 
   // Simulated logout function
@@ -46,6 +48,9 @@ export function Header() {
     try {
        sessionStorage.removeItem('isLoggedIn');
        sessionStorage.removeItem('userRole');
+       sessionStorage.removeItem('landlordVerificationStatus'); // Ensure this is cleared
+       sessionStorage.removeItem('landlordConversations'); // Clear potentially sensitive data
+       sessionStorage.removeItem('landlordUnreadCount');
     } catch (error) {
        console.error("Could not clear sessionStorage:", error);
     }
@@ -58,6 +63,12 @@ export function Header() {
   const isAdmin = userRole === 'admin';
   const isLandlord = userRole === 'landlord';
   const isTenant = userRole === 'tenant';
+
+  // Avoid rendering auth buttons until client-side check is complete
+   if (!isMounted) {
+     // Optional: Render a placeholder or skeleton header while checking auth
+     return <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-14" />;
+   }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -79,14 +90,14 @@ export function Header() {
             {/* Only show "List Your Property" if not logged in or if logged in as a landlord */}
              {(!isLoggedIn || isLandlord) && (
                 <Link
-                href="/landlord/register" // Changed to /landlord/dashboard/listings/new or similar?
+                href={isLandlord ? "/landlord/dashboard/listings/new" : "/landlord/register"} // Link to new listing if landlord, else register
                 className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >
                 List Your Property
                 </Link>
             )}
             {/* Dashboard link in desktop header */}
-            {isAdmin && (
+            {isLoggedIn && isAdmin && (
                  <Link
                    href="/admin/dashboard"
                    className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
@@ -95,7 +106,7 @@ export function Header() {
                     Admin Dashboard
                  </Link>
             )}
-             {isLandlord && (
+             {isLoggedIn && isLandlord && (
                  <Link
                    href="/landlord/dashboard"
                    className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
@@ -104,7 +115,7 @@ export function Header() {
                     Landlord Dashboard
                  </Link>
             )}
-             {isTenant && (
+             {isLoggedIn && isTenant && (
                  <Link
                    href="/tenant/dashboard" // TODO: Create tenant dashboard page
                    className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
@@ -141,7 +152,7 @@ export function Header() {
                  Browse Listings
                </Link>
                 {(!isLoggedIn || isLandlord) && (
-                   <Link href="/landlord/register" // TODO: Change link if needed
+                   <Link href={isLandlord ? "/landlord/dashboard/listings/new" : "/landlord/register"} // Link to new listing if landlord, else register
                          className="text-sm hover:text-primary transition-colors">
                      List Your Property
                    </Link>
@@ -149,17 +160,17 @@ export function Header() {
                <hr className="my-2 border-border" />
 
                {/* Mobile Specific Links */}
-               {isAdmin && (
+               {isLoggedIn && isAdmin && (
                    <Link href="/admin/dashboard" className="text-sm hover:text-primary transition-colors flex items-center">
                       <ShieldCheck className="h-4 w-4 mr-1"/> Admin Dashboard
                    </Link>
                )}
-               {isLandlord && (
+               {isLoggedIn && isLandlord && (
                    <Link href="/landlord/dashboard" className="text-sm hover:text-primary transition-colors flex items-center">
                       <LayoutDashboard className="h-4 w-4 mr-1"/> Landlord Dashboard
                    </Link>
                )}
-               {isTenant && (
+               {isLoggedIn && isTenant && (
                    <Link href="/tenant/dashboard" // TODO: Create tenant dashboard page
                          className="text-sm hover:text-primary transition-colors flex items-center">
                       <User className="h-4 w-4 mr-1"/> Tenant Dashboard

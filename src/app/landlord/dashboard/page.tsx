@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MessageSquare, Home, BarChart } from "lucide-react";
+import { PlusCircle, MessageSquare, Home, BarChart, ArrowLeft } from "lucide-react"; // Added ArrowLeft
 import Link from "next/link";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -51,6 +51,11 @@ export default function LandlordDashboardPage() {
 
     return (
         <div className="container mx-auto px-4 py-12">
+             {/* Back Button */}
+             <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+             </Button>
             <h1 className="text-3xl font-bold mb-8">Landlord Dashboard</h1>
 
             {/* Quick Stats Cards */}

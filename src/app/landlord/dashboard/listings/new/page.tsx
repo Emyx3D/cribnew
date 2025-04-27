@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert } from 'lucide-react'; // Added ShieldAlert
+import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft } from 'lucide-react'; // Added ShieldAlert, ArrowLeft
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert
 
@@ -252,7 +252,12 @@ export default function NewListingPage() {
 
     if (!isVerified) {
         return (
-             <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+             <div className="container mx-auto px-4 py-12 flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+                 {/* Back Button for Verification Pending state */}
+                 <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6 self-start">
+                     <ArrowLeft className="mr-2 h-4 w-4" />
+                     Back
+                 </Button>
                 <Alert variant="destructive" className="max-w-lg">
                   <ShieldAlert className="h-4 w-4" />
                   <AlertTitle>Account Not Verified</AlertTitle>
@@ -270,6 +275,11 @@ export default function NewListingPage() {
 
     return (
         <div className="container mx-auto px-4 py-12">
+            {/* Back Button for Form */}
+            <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+             </Button>
             <Card className="max-w-4xl mx-auto shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-2xl font-bold">Create New Property Listing</CardTitle>

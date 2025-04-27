@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, MessageSquare, Search, Archive } from 'lucide-react';
+import { Send, Loader2, MessageSquare, Search, Archive, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
@@ -44,10 +44,29 @@ async function fetchConversations(): Promise<Conversation[]> {
         if (storedConvos) {
             const parsedConvos = JSON.parse(storedConvos, (key, value) => {
                  // Revive Date objects
-                 if (key === 'timestamp') {
-                    return new Date(value);
+                 if (key === 'lastMessage' && value?.timestamp) {
+                    value.timestamp = new Date(value.timestamp);
+                }
+                 // Also revive timestamp within the lastMessage object itself (nested)
+                if (key === 'timestamp' && typeof value === 'string') {
+                   try {
+                       const date = new Date(value);
+                       // Check if the date is valid before returning
+                       if (!isNaN(date.getTime())) {
+                           return date;
+                       }
+                   } catch (e) {
+                       console.error("Error parsing date:", value, e);
+                       return value; // Return original value if parsing fails
+                   }
                 }
                 return value;
+            });
+            // Ensure lastMessage timestamps are Date objects after parsing
+             parsedConvos.forEach((conv: Conversation) => {
+                if (conv.lastMessage && typeof conv.lastMessage.timestamp === 'string') {
+                    conv.lastMessage.timestamp = new Date(conv.lastMessage.timestamp);
+                }
             });
             console.log("Loaded conversations from sessionStorage");
             return parsedConvos;
@@ -194,6 +213,7 @@ export default function LandlordMessagesPage() {
                             );
                             // Update session storage after marking as read
                             updateSessionStorage(updatedConvos);
+                             setSelectedConversation(prev => prev ? { ...prev, unreadCount: 0 } : null); // Update selected convo state too
                             return updatedConvos;
                         });
                     }
@@ -203,7 +223,8 @@ export default function LandlordMessagesPage() {
         } else {
             setMessages([]); // Clear messages if no conversation is selected
         }
-    }, [selectedConversation]);
+    }, [selectedConversation?.id]); // Re-run when the ID changes
+
 
      // Scroll to bottom when messages load or new message is added
     useEffect(() => {
@@ -229,12 +250,13 @@ export default function LandlordMessagesPage() {
              setConversations(prevConvos => {
                  const updatedConvos = prevConvos.map(c =>
                      c.id === selectedConversation.id
-                         ? { ...c, lastMessage: result.newMessage! }
+                         ? { ...c, lastMessage: result.newMessage!, unreadCount: 0 } // Also reset unread on send
                          : c
                  );
                  updateSessionStorage(updatedConvos); // Update session storage
                  return updatedConvos;
              });
+              setSelectedConversation(prev => prev ? { ...prev, lastMessage: result.newMessage!, unreadCount: 0 } : null); // Update selected convo state
         } else {
             // Handle error (e.g., show toast)
             console.error("Failed to send message:", result.error);
@@ -250,6 +272,11 @@ export default function LandlordMessagesPage() {
 
     return (
         <div className="container mx-auto px-4 py-12 h-[calc(100vh-10rem)] flex flex-col"> {/* Adjust height as needed */}
+             {/* Back Button */}
+             <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6 self-start">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+             </Button>
             <h1 className="text-3xl font-bold mb-6">Messages</h1>
 
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 min-h-0"> {/* Flex layout */}
@@ -388,4 +415,3 @@ export default function LandlordMessagesPage() {
         </div>
     );
 }
-
