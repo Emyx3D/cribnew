@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BedDouble, Bath, MapPin, Wallet, Pencil, Trash2, Eye, Loader2, PlusCircle } from 'lucide-react';
+import { BedDouble, Bath, MapPin, Wallet, Pencil, Trash2, Eye, Loader2, PlusCircle, MessageSquare } from 'lucide-react'; // Added MessageSquare
 import Image from 'next/image';
 import Link from "next/link";
 import { useToast } from '@/hooks/use-toast';
@@ -179,7 +179,9 @@ export default function ManageListingsPage() {
                 </div>
             ) : listings.length === 0 ? (
                 <div className="text-center py-20 border border-dashed rounded-lg">
-                    <Home className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    {/* Use Home icon from lucide-react if available, otherwise replace */}
+                    {/* <Home className="mx-auto h-12 w-12 text-muted-foreground mb-4" /> */}
+                    <PlusCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" /> {/* Using PlusCircle as placeholder */}
                     <h2 className="text-xl font-semibold mb-2">No listings yet!</h2>
                     <p className="text-muted-foreground mb-4">Get started by adding your first property.</p>
                     <Button asChild>
@@ -285,4 +287,3 @@ export default function ManageListingsPage() {
         </div>
     );
 }
-
