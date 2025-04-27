@@ -12,21 +12,22 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils"; // Import cn utility
 
 const MIN_PRICE_LIMIT = 150000;
-const MAX_PRICE_LIMIT = 20000000;
+const MAX_PRICE_LIMIT = 50000000; // Increased max price limit
 
 export function FilterSidebar() {
     // State for the selected price range [min, max] used by the Slider
     const [priceRange, setPriceRange] = useState<[number, number]>([MIN_PRICE_LIMIT, MAX_PRICE_LIMIT]);
     // State for the input field values (as strings)
     const [minPriceInput, setMinPriceInput] = useState<string>(MIN_PRICE_LIMIT.toLocaleString());
-    const [maxPriceInput, setMaxPriceInput] = useState<string>(MAX_PRICE_LIMIT.toLocaleString());
+    const [maxPriceInput, setMaxPriceInput] = useState<string>('Any'); // Default Max to 'Any'
 
     // Update inputs when slider changes
     const handleSliderChange = (value: number[]) => {
         const [min, max] = value;
         setPriceRange([min, max]);
         setMinPriceInput(min.toLocaleString());
-        setMaxPriceInput(max.toLocaleString());
+        // If slider reaches max, display 'Any', otherwise display formatted number
+        setMaxPriceInput(max === MAX_PRICE_LIMIT ? 'Any' : max.toLocaleString());
     };
 
     // Handle changes in the Min Price input field
@@ -36,7 +37,8 @@ export function FilterSidebar() {
 
     // Handle changes in the Max Price input field
     const handleMaxInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setMaxPriceInput(e.target.value); // Update string state directly
+        const value = e.target.value.toLowerCase();
+        setMaxPriceInput(value); // Update string state directly
     };
 
     // Validate and update slider state when Min Price input loses focus
@@ -57,15 +59,24 @@ export function FilterSidebar() {
      // Validate and update slider state when Max Price input loses focus
     const handleMaxInputBlur = () => {
         const rawValue = maxPriceInput;
+        // If user typed 'any' or similar, set slider to max
+        if (rawValue.toLowerCase().includes('any') || rawValue === '') {
+             setPriceRange(prev => [prev[0], MAX_PRICE_LIMIT]);
+             setMaxPriceInput('Any');
+             return;
+        }
+
         const numericValue = parseInt(rawValue.replace(/,/g, ''), 10);
 
         if (!isNaN(numericValue)) {
+            // Clamp the value between min slider value and MAX_PRICE_LIMIT
             const newMax = Math.min(MAX_PRICE_LIMIT, Math.max(numericValue, priceRange[0]));
-            setPriceRange(prev => [prev[0], newMax]);
-            setMaxPriceInput(newMax.toLocaleString()); // Format the input
+             setPriceRange(prev => [prev[0], newMax]);
+            // Display 'Any' if the value IS the max limit, otherwise format number
+            setMaxPriceInput(newMax === MAX_PRICE_LIMIT ? 'Any' : newMax.toLocaleString());
         } else {
-             // Reset input to current valid slider value if input is invalid
-            setMaxPriceInput(priceRange[1].toLocaleString());
+             // Reset input to current valid slider value or 'Any' if invalid
+            setMaxPriceInput(priceRange[1] === MAX_PRICE_LIMIT ? 'Any' : priceRange[1].toLocaleString());
         }
     };
 
@@ -92,6 +103,7 @@ export function FilterSidebar() {
                             <SelectItem value="duplex">Duplex</SelectItem>
                             <SelectItem value="studio">Studio</SelectItem>
                             <SelectItem value="bungalow">Bungalow</SelectItem>
+                            <SelectItem value="airbnb">Airbnb / Short Let</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -113,14 +125,23 @@ export function FilterSidebar() {
 
                 {/* Price Range Filter */}
                 <div className="space-y-4">
-                   <Label>Price Range (₦/year)</Label>
+                   <Label>Price Range (₦/period)</Label>
+                   {/* Display current slider range */}
+                   <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>₦{priceRange[0].toLocaleString()}</span>
+                      <span>{priceRange[1] === MAX_PRICE_LIMIT ? '₦50M+' : `₦${priceRange[1].toLocaleString()}`}</span>
+                   </div>
                    <Slider
                       value={priceRange} // Controlled component based on validated state
                       min={MIN_PRICE_LIMIT}
                       max={MAX_PRICE_LIMIT}
-                      step={50000}
+                      step={100000} // Increased step for wider range
                       onValueChange={handleSliderChange} // Updates inputs when slider moves
                       className="my-4"
+                      // Add custom styling for the slider range (track fill)
+                      // This is a basic example, might need adjustments in globals.css or via direct style prop
+                      // style={{ '--slider-range-color': 'hsl(var(--primary))' } as React.CSSProperties}
+                      // Or via className targeting internal parts if ShadCN allows
                    />
                     {/* Min/Max Input Boxes */}
                     <div className="flex justify-between items-center gap-2">
@@ -141,20 +162,15 @@ export function FilterSidebar() {
                              <Label htmlFor="maxPrice" className="text-xs text-muted-foreground">Max Price</Label>
                              <Input
                                 id="maxPrice"
-                                type="text" // Use text to allow commas during input
+                                type="text" // Use text to allow 'Any' and commas
                                 value={maxPriceInput} // Controlled by string state
                                 onChange={handleMaxInputChange} // Update string state on change
                                 onBlur={handleMaxInputBlur} // Validate and update slider on blur
-                                placeholder={MAX_PRICE_LIMIT.toLocaleString()}
+                                placeholder="Any"
                                 className="h-9 text-sm"
                             />
                         </div>
                     </div>
-                   {/* Display current slider range (optional but helpful for debugging) */}
-                   {/* <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>₦{priceRange[0].toLocaleString()}</span>
-                      <span>₦{priceRange[1].toLocaleString()}</span>
-                   </div> */}
                 </div>
 
 

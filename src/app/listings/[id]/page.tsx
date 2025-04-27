@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react'; // Added Eye, EyeOff, ArrowLeft, Loader2
+import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff, ArrowLeft, Loader2, Video } from 'lucide-react'; // Added Video icon
 import Image from "next/image";
 import {
   AlertDialog,
@@ -47,6 +47,7 @@ async function getListingData(id: string): Promise<ListingData> {
             "https://picsum.photos/seed/house1_bedroom_lg/800/600",
             "https://picsum.photos/seed/house1_bathroom_lg/800/600",
         ],
+        videoUrl: "https://videos.pexels.com/video-files/857802/857802-hd_1280_720_25fps.mp4", // Sample video URL
         verified: true,
         amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
         landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
@@ -65,6 +66,7 @@ async function getListingData(id: string): Promise<ListingData> {
             "https://picsum.photos/seed/house2_kitchen_lg/800/600",
             "https://picsum.photos/seed/house2_exterior_lg/800/600",
         ],
+        videoUrl: null, // No video
         verified: true,
         amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
          landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
@@ -83,6 +85,7 @@ async function getListingData(id: string): Promise<ListingData> {
             "https://picsum.photos/seed/house3_bathroom_lg/800/600",
             "https://picsum.photos/seed/house3_entrance_lg/800/600",
         ],
+        videoUrl: null, // No video
         verified: false, // Example of unverified landlord
         amenities: ["Furnished", "Generator", "Air Conditioning"],
          landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" }, // Phone might be hidden until verified
@@ -102,6 +105,7 @@ async function getListingData(id: string): Promise<ListingData> {
             "https://picsum.photos/seed/house4_garden_lg/800/600",
             "https://picsum.photos/seed/house4_masterbedroom_lg/800/600",
         ],
+         videoUrl: "https://videos.pexels.com/video-files/5997169/5997169-hd_1280_720_30fps.mp4", // Sample video URL
         verified: true,
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
          landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
@@ -120,6 +124,7 @@ async function getListingData(id: string): Promise<ListingData> {
                 "https://picsum.photos/seed/my_house1_kitchen/800/600",
                 "https://picsum.photos/seed/my_house1_bedroom/800/600",
             ],
+             videoUrl: null, // No video
             description: "This is the spacious 3 bedroom apartment listed by the test landlord. Excellent condition.",
             verified: true, // Assuming landlord is verified
             status: 'active',
@@ -139,6 +144,7 @@ async function getListingData(id: string): Promise<ListingData> {
                  "https://picsum.photos/seed/my_house2_kitchen/800/600",
                  "https://picsum.photos/seed/my_house2_living/800/600",
              ],
+             videoUrl: null, // No video
              description: "Cozy and affordable flat in Yaba.",
              verified: true,
              amenities: ["Water Supply", "Prepaid Meter"],
@@ -154,6 +160,7 @@ async function getListingData(id: string): Promise<ListingData> {
             bathrooms: 5,
             imageUrl: 'https://picsum.photos/seed/prop123_pool/800/600',
             gallery: ['https://picsum.photos/seed/prop123_pool/800/600', 'https://picsum.photos/seed/prop123_living/800/600'],
+             videoUrl: null, // No video
             description: 'Ultra-luxury penthouse with amazing views and private pool.',
             verified: true, // Landlord might be verified even if listing is flagged
             amenities: ['Swimming Pool', 'Security', 'Parking Space', 'Gym'],
@@ -168,6 +175,7 @@ async function getListingData(id: string): Promise<ListingData> {
             bathrooms: 1,
             imageUrl: 'https://picsum.photos/seed/prop456_studio/800/600',
             gallery: ['https://picsum.photos/seed/prop456_studio/800/600', 'https://picsum.photos/seed/prop456_bathroom/800/600'],
+             videoUrl: null, // No video
             description: 'Affordable studio apartment with basic amenities, close to the market.',
             verified: true,
             amenities: ['Water Supply', 'Tiled Floors'],
@@ -182,6 +190,7 @@ async function getListingData(id: string): Promise<ListingData> {
             bathrooms: 6,
             imageUrl: 'https://picsum.photos/seed/prop789_beach/800/600',
             gallery: ['https://picsum.photos/seed/prop789_beach/800/600', 'https://picsum.photos/seed/prop789_interior/800/600'],
+             videoUrl: null, // No video
             description: 'Spacious beachfront property, available for immediate rent. Great views!',
             verified: false, // Assume landlord verification might be pending or failed
             amenities: ['Beach Access', 'Balcony', 'Parking Space'],
@@ -206,7 +215,7 @@ interface ListingDetailPageProps {
 
 
 // Define the listing type based on mock data structure
-// Add 'gallery' to the type definition
+// Add 'gallery' and 'videoUrl' to the type definition
 type ListingData = {
     id: number | string; // Allow string IDs
     title: string;
@@ -217,6 +226,7 @@ type ListingData = {
     description: string;
     imageUrl: string;
     gallery: string[]; // Array of image URLs
+    videoUrl?: string | null; // Optional video URL
     verified: boolean;
     amenities: string[];
     landlord: {
@@ -229,8 +239,6 @@ type ListingData = {
 
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
-  // Since React.use() cannot be used in Client Components like this (it's for Server Components/async contexts),
-  // we'll stick to direct access and rely on the dependency array in useEffect.
 
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -377,13 +385,33 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                 </p>
 
                  <h2 className="text-xl font-semibold mb-3">Amenities</h2>
-                 <div className="flex flex-wrap gap-2">
+                 <div className="flex flex-wrap gap-2 mb-6">
                     {listing.amenities.map(amenity => (
                         <Badge key={amenity} variant="secondary" className="px-3 py-1 text-sm">
                            <CheckCircle className="w-4 h-4 mr-1 text-green-600"/> {amenity}
                         </Badge>
                     ))}
                  </div>
+
+                  {/* Video Section */}
+                 {listing.videoUrl && (
+                    <>
+                      <Separator className="my-6" />
+                      <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                        <Video className="w-5 h-5" /> Video Tour
+                      </h2>
+                      <div className="aspect-video w-full max-w-2xl mx-auto bg-muted rounded-lg overflow-hidden">
+                          <video
+                              controls
+                              src={listing.videoUrl}
+                              className="w-full h-full object-contain"
+                              preload="metadata" // Load metadata for duration etc.
+                          >
+                               Your browser does not support the video tag.
+                           </video>
+                      </div>
+                    </>
+                 )}
              </CardContent>
           </Card>
         </div>

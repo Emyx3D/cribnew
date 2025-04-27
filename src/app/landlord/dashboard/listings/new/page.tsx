@@ -4,9 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form'; // Added SubmitHandler
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Added useRef
 import Image from 'next/image'; // For previewing images
-
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -22,19 +21,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft } from 'lucide-react'; // Added ShieldAlert, ArrowLeft
+import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video } from 'lucide-react'; // Added Video icon
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert
 
 // --- Constants ---
+const MIN_IMAGES = 3;
 const MAX_IMAGES = 5;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"]; // Added video types
 const ALL_AMENITIES = [
     "Water Supply", "Electricity", "Security", "Parking Space",
     "Furnished", "Air Conditioning", "Tiled Floors", "Prepaid Meter",
     "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool"
 ]; // Example amenities list
+
+// Custom file validation function (reusable for images and video)
+const validateFile = (file: File | undefined | null, acceptedTypes: string[], maxSize: number, fieldName: string) => {
+  if (!file) return `${fieldName} is required.`; // Adjusted message
+  if (file.size > maxSize) return `${fieldName} size should be less than ${maxSize / 1024 / 1024}MB.`;
+  if (!acceptedTypes.includes(file.type)) return `Invalid file type for ${fieldName}. Only ${acceptedTypes.map(t => t.split('/')[1]).join(', ')} allowed.`;
+  return true; // Validation passed
+};
+
 
 // --- Zod Schema Definition ---
 const listingFormSchema = z.object({
@@ -44,23 +55,28 @@ const listingFormSchema = z.object({
     bedrooms: z.coerce.number().min(1, 'Must have at least 1 bedroom.'), // coerce converts string from Select to number
     bathrooms: z.coerce.number().min(1, 'Must have at least 1 bathroom.'),
     price: z.string().min(1, 'Price is required.').regex(/^\d+$/, "Price must be a number."), // Validate as numeric string
-    priceFrequency: z.enum(['year', 'month']), // Add frequency
+    priceFrequency: z.enum(['year', 'month', 'week']), // Added 'week'
     description: z.string().min(20, 'Description must be at least 20 characters.').max(1000, 'Description too long.'),
     amenities: z.array(z.string()).optional(), // Array of selected amenity strings
     images: z.array(z.instanceof(File))
-        .min(1, 'At least one image is required.')
+        .min(MIN_IMAGES, `At least ${MIN_IMAGES} images are required.`)
         .max(MAX_IMAGES, `You can upload a maximum of ${MAX_IMAGES} images.`)
-        .refine(files => files.every(file => file.size <= MAX_FILE_SIZE), `Each file size should be less than ${MAX_FILE_SIZE / 1024 / 1024}MB.`)
-        .refine(files => files.every(file => ACCEPTED_IMAGE_TYPES.includes(file.type)), `Only .jpg, .jpeg, .png and .webp formats are supported.`)
+        .refine(files => files.every(file => file.size <= MAX_IMAGE_FILE_SIZE), `Each image size should be less than ${MAX_IMAGE_FILE_SIZE / 1024 / 1024}MB.`)
+        .refine(files => files.every(file => ACCEPTED_IMAGE_TYPES.includes(file.type)), `Only .jpg, .jpeg, .png and .webp formats are supported for images.`),
+    video: z.instanceof(File).optional() // Optional video field
+          .refine(file => !file || validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video') === true, {
+              message: (file) => validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video') as string, // Show specific error
+          }),
 });
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
 
 // --- Mock API Function ---
 // TODO: Replace with actual API call to create listing
-async function createListing(data: ListingFormValues, imageFiles: File[]): Promise<{ success: boolean; error?: string; listingId?: string }> {
+async function createListing(data: ListingFormValues, imageFiles: File[], videoFile?: File): Promise<{ success: boolean; error?: string; listingId?: string }> {
     console.log("Creating listing with data:", data);
     console.log("Image files:", imageFiles);
+    console.log("Video file:", videoFile);
 
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -71,13 +87,12 @@ async function createListing(data: ListingFormValues, imageFiles: File[]): Promi
     formData.append('title', data.title);
     formData.append('location', data.location);
     formData.append('propertyType', data.propertyType);
-    formData.append('bedrooms', data.bedrooms.toString());
-    formData.append('bathrooms', data.bathrooms.toString());
-    formData.append('price', data.price);
-    formData.append('priceFrequency', data.priceFrequency);
-    formData.append('description', data.description);
+    // ... append other text fields ...
     data.amenities?.forEach(amenity => formData.append('amenities[]', amenity));
     imageFiles.forEach((file, index) => formData.append(`images[${index}]`, file));
+    if (videoFile) {
+        formData.append('video', videoFile);
+    }
 
     // const response = await fetch('/api/listings', { method: 'POST', body: formData });
     // const result = await response.json();
@@ -95,8 +110,11 @@ export default function NewListingPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [videoPreview, setVideoPreview] = useState<string | null>(null); // State for video preview URL
+    const [videoFileName, setVideoFileName] = useState<string | null>(null); // State for video file name
     const [isVerified, setIsVerified] = useState<boolean | null>(null); // Add state for verification check
     const [imageCleanupNeeded, setImageCleanupNeeded] = useState(false); // Flag for cleanup
+    const videoInputRef = useRef<HTMLInputElement>(null); // Ref for video input
 
     // Check landlord verification status
     useEffect(() => {
@@ -120,8 +138,6 @@ export default function NewListingPage() {
                     description: "You need to be verified to create a new listing.",
                     duration: 5000,
                  });
-                 // Optionally redirect back to dashboard after a delay or immediately
-                 // router.push('/landlord/dashboard');
             }
         } catch (error) {
             console.error("Error checking verification status:", error);
@@ -143,25 +159,56 @@ export default function NewListingPage() {
             description: '',
             amenities: [],
             images: [],
+            video: undefined,
         },
+         mode: 'onBlur', // Validate on blur for better performance
     });
 
-    const { fields, append, remove } = useFieldArray({
+     // Watch for changes in video field to update preview
+    const videoFieldValue = form.watch("video");
+
+    useEffect(() => {
+        if (videoFieldValue instanceof File) {
+            const url = URL.createObjectURL(videoFieldValue);
+            setVideoPreview(url);
+            setVideoFileName(videoFieldValue.name);
+            // No immediate cleanup here, cleanup on unmount or removal
+        } else {
+             // If video is removed or not a file, clear preview and name
+             if (videoPreview) {
+                 URL.revokeObjectURL(videoPreview); // Clean up old URL
+             }
+            setVideoPreview(null);
+            setVideoFileName(null);
+        }
+
+        // Cleanup function for when the component unmounts or videoFieldValue changes *away* from a File
+        return () => {
+             if (videoPreview && !(videoFieldValue instanceof File)) {
+                console.log("Cleaning up video preview URL on change/unmount:", videoPreview);
+                URL.revokeObjectURL(videoPreview);
+            }
+        };
+        // Trigger when videoFieldValue changes, but only cleanup if it's no longer a File instance
+    }, [videoFieldValue]);
+
+
+    const { fields: imageFields, append: appendImage, remove: removeImageField } = useFieldArray({
         control: form.control,
         name: "images",
     });
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
          if (!isVerified) return; // Prevent action if not verified
         const files = Array.from(event.target.files || []);
-        const currentImageCount = fields.length;
+        const currentImageCount = imageFields.length;
         const availableSlots = MAX_IMAGES - currentImageCount;
         const filesToAdd = files.slice(0, availableSlots);
 
         if (files.length > availableSlots) {
             toast({
                 variant: 'destructive',
-                title: "Limit Exceeded",
+                title: "Image Limit Exceeded",
                 description: `You can only add ${availableSlots} more image(s). Maximum is ${MAX_IMAGES}.`,
             });
         }
@@ -170,19 +217,15 @@ export default function NewListingPage() {
         const validatedFiles: File[] = [];
         const newPreviews: string[] = [];
         filesToAdd.forEach(file => {
-            if (file.size > MAX_FILE_SIZE) {
-                 toast({ variant: 'destructive', title: "File Too Large", description: `${file.name} exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit.` });
-                 return;
+            if (validateFile(file, ACCEPTED_IMAGE_TYPES, MAX_IMAGE_FILE_SIZE, 'Image') !== true) {
+                toast({ variant: 'destructive', title: "Invalid Image", description: validateFile(file, ACCEPTED_IMAGE_TYPES, MAX_IMAGE_FILE_SIZE, 'Image') as string });
+                return;
             }
-             if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-                  toast({ variant: 'destructive', title: "Invalid File Type", description: `${file.name} is not a supported image type.` });
-                  return;
-             }
              validatedFiles.push(file);
              newPreviews.push(URL.createObjectURL(file));
         });
 
-        append(validatedFiles); // Append validated files to the form array
+        appendImage(validatedFiles); // Append validated files to the form array
         setImagePreviews(prev => [...prev, ...newPreviews]); // Update previews
         setImageCleanupNeeded(true); // Indicate that cleanup might be needed
         form.trigger("images"); // Manually trigger validation for the images field
@@ -191,15 +234,46 @@ export default function NewListingPage() {
          event.target.value = '';
     };
 
+     const handleVideoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+         if (!isVerified) return;
+         const file = event.target.files?.[0];
+
+         if (file) {
+            // Validate the single video file
+            const validationResult = validateFile(file, ACCEPTED_VIDEO_TYPES, MAX_VIDEO_FILE_SIZE, 'Video');
+            if (validationResult === true) {
+                 form.setValue('video', file, { shouldValidate: true }); // Update form value and trigger validation
+             } else {
+                 toast({ variant: 'destructive', title: "Invalid Video", description: validationResult });
+                 form.setValue('video', undefined, { shouldValidate: true }); // Clear value if invalid
+                  // Clear the input visually
+                 if (videoInputRef.current) {
+                     videoInputRef.current.value = '';
+                 }
+             }
+         } else {
+              form.setValue('video', undefined, { shouldValidate: true }); // Clear value if no file selected
+         }
+     };
+
+     const removeVideo = () => {
+         if (!isVerified) return;
+         form.setValue('video', undefined, { shouldValidate: true }); // Clear form value
+         // Preview and name are cleared by the useEffect watching videoFieldValue
+          if (videoInputRef.current) { // Clear the actual file input
+             videoInputRef.current.value = '';
+         }
+     };
+
     const removeImage = (index: number) => {
          if (!isVerified) return; // Prevent action if not verified
         URL.revokeObjectURL(imagePreviews[index]); // Clean up blob URL immediately
-        remove(index); // Remove from form array
+        removeImageField(index); // Remove from form array
         setImagePreviews(prev => prev.filter((_, i) => i !== index)); // Remove from previews
         form.trigger("images");
     };
 
-    // Cleanup object URLs on component unmount
+    // Cleanup image object URLs on component unmount
     useEffect(() => {
         // Only run cleanup if previews were generated
         if (imageCleanupNeeded) {
@@ -217,19 +291,22 @@ export default function NewListingPage() {
         }
         setIsLoading(true);
         const imageFiles = form.getValues("images"); // Get the File objects
+        const videoFile = form.getValues("video"); // Get the optional File object
 
         // Call API function
-        const result = await createListing(data, imageFiles);
+        const result = await createListing(data, imageFiles, videoFile);
 
         if (result.success && result.listingId) {
             toast({
                 title: "Listing Created!",
                 description: "Your property has been listed successfully.",
             });
-            // Redirect to the new listing's page or landlord's listing management page
-            // Clear previews *before* resetting the form and navigating
+            // Cleanup previews before resetting/navigating
             imagePreviews.forEach(url => URL.revokeObjectURL(url));
+            if (videoPreview) URL.revokeObjectURL(videoPreview);
             setImagePreviews([]);
+            setVideoPreview(null);
+            setVideoFileName(null);
             setImageCleanupNeeded(false); // Reset cleanup flag
             form.reset();
             router.push(`/listings/${result.listingId}`);
@@ -242,7 +319,6 @@ export default function NewListingPage() {
             });
             setIsLoading(false); // Ensure loading is stopped on failure
         }
-        // Don't set isLoading to false here if successful, redirect handles it
     };
 
      // Show loading or verification needed message before rendering form
@@ -337,8 +413,9 @@ export default function NewListingPage() {
                                                     <SelectItem value="studio">Studio Apartment</SelectItem>
                                                     <SelectItem value="bungalow">Bungalow</SelectItem>
                                                     <SelectItem value="terrace">Terrace House</SelectItem>
-                                                     <SelectItem value="penthouse">Penthouse</SelectItem>
+                                                    <SelectItem value="penthouse">Penthouse</SelectItem>
                                                     <SelectItem value="self-contain">Self-Contain</SelectItem>
+                                                    <SelectItem value="airbnb">Airbnb / Short Let</SelectItem> {/* Added Airbnb */}
                                                 </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -403,13 +480,14 @@ export default function NewListingPage() {
                                                     render={({ field: freqField }) => (
                                                         <Select onValueChange={freqField.onChange} defaultValue={freqField.value} disabled={isLoading}>
                                                             <FormControl>
-                                                                <SelectTrigger className="w-[120px]">
+                                                                <SelectTrigger className="w-[130px]"> {/* Adjusted width */}
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
                                                                 <SelectItem value="year">Per Year</SelectItem>
                                                                 <SelectItem value="month">Per Month</SelectItem>
+                                                                <SelectItem value="week">Per Week</SelectItem> {/* Added week */}
                                                             </SelectContent>
                                                         </Select>
                                                      )}
@@ -493,7 +571,7 @@ export default function NewListingPage() {
                              <div className="space-y-4 p-4 border rounded-md">
                                 <h3 className="text-lg font-semibold mb-1">Property Images</h3>
                                  <p className="text-sm text-muted-foreground mb-4 flex items-center gap-1">
-                                    <Info className="w-4 h-4"/> Upload up to {MAX_IMAGES} high-quality images (Max {MAX_FILE_SIZE / 1024 / 1024}MB each). First image will be the main cover.
+                                    <Info className="w-4 h-4"/> Upload {MIN_IMAGES}-{MAX_IMAGES} high-quality images (Max {MAX_IMAGE_FILE_SIZE / 1024 / 1024}MB each). First image is cover.
                                 </p>
                                 <FormField
                                     control={form.control}
@@ -508,16 +586,16 @@ export default function NewListingPage() {
                                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" // Hidden input
                                                         accept={ACCEPTED_IMAGE_TYPES.join(",")}
                                                         multiple // Allow multiple file selection
-                                                        onChange={handleFileChange}
-                                                         disabled={isLoading || fields.length >= MAX_IMAGES} // Disable if max reached
+                                                        onChange={handleImageFileChange}
+                                                         disabled={isLoading || imageFields.length >= MAX_IMAGES} // Disable if max reached
                                                     />
                                                     <label
                                                         htmlFor="imageUpload" // Link label to hidden input
-                                                        className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative ${form.formState.errors.images ? 'border-destructive' : 'border-input'} ${isLoading || fields.length >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative ${form.formState.errors.images ? 'border-destructive' : 'border-input'} ${isLoading || imageFields.length >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     >
                                                         <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
                                                         <p className="text-sm text-muted-foreground">
-                                                            {fields.length >= MAX_IMAGES ? `Maximum ${MAX_IMAGES} images reached` : `Click or drag images here (${fields.length}/${MAX_IMAGES})`}
+                                                            {imageFields.length >= MAX_IMAGES ? `Maximum ${MAX_IMAGES} images reached` : `Click or drag images here (${imageFields.length}/${MAX_IMAGES})`}
                                                         </p>
                                                     </label>
                                                   </div>
@@ -560,6 +638,71 @@ export default function NewListingPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* --- Video Upload (Optional) --- */}
+                             <div className="space-y-4 p-4 border rounded-md">
+                                <h3 className="text-lg font-semibold mb-1">Property Video (Optional)</h3>
+                                 <p className="text-sm text-muted-foreground mb-4 flex items-center gap-1">
+                                    <Info className="w-4 h-4"/> Upload one short video tour (Max {MAX_VIDEO_FILE_SIZE / 1024 / 1024}MB, MP4/WebM/MOV).
+                                </p>
+                                <FormField
+                                    control={form.control}
+                                    name="video"
+                                    render={({ field }) => ( // Use field here for onChange handling
+                                        <FormItem>
+                                            <FormControl>
+                                                <div className="relative">
+                                                     <Input
+                                                         id="videoUpload"
+                                                         type="file"
+                                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" // Hidden input
+                                                         accept={ACCEPTED_VIDEO_TYPES.join(",")}
+                                                         onChange={handleVideoFileChange}
+                                                         ref={videoInputRef} // Attach ref here
+                                                         disabled={isLoading}
+                                                     />
+                                                      <label
+                                                         htmlFor="videoUpload"
+                                                         className={`flex items-center justify-center w-full h-24 border-2 border-dashed rounded-md cursor-pointer bg-background hover:bg-muted relative ${form.formState.errors.video ? 'border-destructive' : 'border-input'}`}
+                                                     >
+                                                          {videoPreview ? (
+                                                             <div className="text-center px-4 relative group">
+                                                                 <Video className="mx-auto h-8 w-8 mb-1 text-primary"/>
+                                                                 <p className="text-sm text-foreground truncate">{videoFileName}</p>
+                                                                  <Button
+                                                                     type="button"
+                                                                     variant="destructive"
+                                                                     size="icon"
+                                                                     className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                     onClick={removeVideo}
+                                                                     disabled={isLoading}
+                                                                     title="Remove video"
+                                                                 >
+                                                                     <Trash2 className="h-4 w-4" />
+                                                                 </Button>
+                                                             </div>
+                                                         ) : (
+                                                              <div className="text-center text-muted-foreground">
+                                                                  <UploadCloud className="mx-auto h-8 w-8 mb-2" />
+                                                                  <p>Click or drag video file (Optional)</p>
+                                                              </div>
+                                                         )}
+                                                      </label>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage /> {/* Show validation errors for the video */}
+                                        </FormItem>
+                                    )}
+                                />
+                                 {/* Video Preview Player */}
+                                {videoPreview && (
+                                    <div className="mt-4">
+                                        <video controls className="w-full max-w-sm mx-auto rounded-md border" src={videoPreview}>
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                )}
+                             </div>
 
                             {/* --- Submission Button --- */}
                             <div className="flex justify-end pt-4">
