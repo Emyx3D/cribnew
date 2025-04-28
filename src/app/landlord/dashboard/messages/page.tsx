@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -5,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, MessageSquare, Search, Archive, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
+import { Send, Loader2, MessageSquare, Search, Archive, ArrowLeft, PanelLeft } from 'lucide-react'; // Added PanelLeft
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link'; // Import Link component
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'; // Import Sheet
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile hook
 
 // TODO: Define Message and Conversation types
 type Message = {
@@ -158,7 +161,9 @@ export default function LandlordMessagesPage() {
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [mobileListOpen, setMobileListOpen] = useState(false); // State for mobile sheet
     const router = useRouter();
+    const isMobile = useIsMobile(); // Check if mobile
     const messageEndRef = useRef<HTMLDivElement>(null); // Ref for scrolling
 
      // Auth Check
@@ -182,10 +187,15 @@ export default function LandlordMessagesPage() {
                 setConversations(data);
                 setFilteredConversations(data); // Initialize filter list
                 updateSessionStorage(data); // Update session storage on initial load
+                 // Auto-select the first conversation on desktop if available
+                if (!isMobile && data.length > 0) {
+                   setSelectedConversation(data.sort((a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime())[0]);
+                }
             })
             .catch(err => console.error("Error fetching conversations:", err))
             .finally(() => setIsLoadingConversations(false));
-    }, []);
+    }, [isMobile]); // Re-run if isMobile changes (e.g., window resize across breakpoint)
+
 
     // Filter conversations based on search term
      useEffect(() => {
@@ -228,12 +238,16 @@ export default function LandlordMessagesPage() {
 
      // Scroll to bottom when messages load or new message is added
     useEffect(() => {
-        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        // Delay slightly to ensure DOM is updated
+        setTimeout(() => {
+             messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
     }, [messages]);
 
 
     const handleSelectConversation = (conversation: Conversation) => {
         setSelectedConversation(conversation);
+        setMobileListOpen(false); // Close mobile sheet when a conversation is selected
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -252,7 +266,7 @@ export default function LandlordMessagesPage() {
                      c.id === selectedConversation.id
                          ? { ...c, lastMessage: result.newMessage!, unreadCount: 0 } // Also reset unread on send
                          : c
-                 );
+                 ).sort((a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()); // Re-sort after update
                  updateSessionStorage(updatedConvos); // Update session storage
                  return updatedConvos;
              });
@@ -269,6 +283,60 @@ export default function LandlordMessagesPage() {
         return name.split(' ').map(n => n[0]).join('').toUpperCase();
     }
 
+    const ConversationListContent = () => (
+        <>
+           <CardHeader className="pb-2 pt-4 sticky top-0 bg-background z-10">
+                <CardTitle className="text-lg">Conversations</CardTitle>
+                <div className="relative mt-2">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search..."
+                        className="pl-8 h-9"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </CardHeader>
+            <ScrollArea className="flex-1 min-h-0">
+                <CardContent className="p-0">
+                    {isLoadingConversations ? (
+                        <div className="p-6 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
+                    ) : filteredConversations.length === 0 ? (
+                        <p className="p-6 text-center text-sm text-muted-foreground">No conversations.</p>
+                    ) : (
+                        <div className="space-y-1 p-2">
+                            {filteredConversations.map((conv) => (
+                                <button
+                                    key={conv.id}
+                                    onClick={() => handleSelectConversation(conv)}
+                                    className={cn(
+                                        "flex items-center w-full p-2 text-left hover:bg-muted transition-colors rounded-md",
+                                        selectedConversation?.id === conv.id && "bg-muted"
+                                    )}
+                                >
+                                    <Avatar className="h-10 w-10 mr-3">
+                                        <AvatarImage src={conv.tenantAvatarUrl} alt={conv.tenantName} />
+                                        <AvatarFallback>{getInitials(conv.tenantName)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 overflow-hidden">
+                                        <div className="flex justify-between items-center">
+                                            <p className="font-semibold truncate text-sm">{conv.tenantName}</p>
+                                            {conv.unreadCount > 0 && (
+                                                <Badge variant="destructive" className="h-5 px-1.5 text-xs">{conv.unreadCount}</Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground truncate">{conv.listingTitle}</p>
+                                        <p className="text-xs text-muted-foreground truncate mt-0.5">{conv.lastMessage.text}</p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </ScrollArea>
+        </>
+    );
+
 
     return (
         <div className="container mx-auto px-4 py-12 h-[calc(100vh-10rem)] flex flex-col"> {/* Adjust height as needed */}
@@ -279,69 +347,43 @@ export default function LandlordMessagesPage() {
              </Button>
             <h1 className="text-3xl font-bold mb-6">Messages</h1>
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 min-h-0"> {/* Flex layout */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-[minmax(250px,_300px)_1fr] gap-6 min-h-0"> {/* Adjusted grid columns */}
 
-                {/* Conversation List */}
-                <Card className="md:col-span-1 lg:col-span-1 flex flex-col min-h-0 shadow-md">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">Conversations</CardTitle>
-                         <div className="relative mt-2">
-                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by tenant or property..."
-                                className="pl-8 h-9"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                         </div>
-                    </CardHeader>
-                    <ScrollArea className="flex-1 min-h-0"> {/* ScrollArea takes remaining space */}
-                        <CardContent className="p-0">
-                            {isLoadingConversations ? (
-                                <div className="p-6 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
-                            ) : filteredConversations.length === 0 ? (
-                                <p className="p-6 text-center text-sm text-muted-foreground">No conversations found.</p>
-                            ) : (
-                                <div className="space-y-1">
-                                    {filteredConversations.sort((a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()).map((conv) => (
-                                        <button
-                                            key={conv.id}
-                                            onClick={() => handleSelectConversation(conv)}
-                                            className={cn(
-                                                "flex items-center w-full p-3 text-left hover:bg-muted transition-colors rounded-md",
-                                                selectedConversation?.id === conv.id && "bg-muted"
-                                            )}
-                                        >
-                                            <Avatar className="h-10 w-10 mr-3">
-                                                <AvatarImage src={conv.tenantAvatarUrl} alt={conv.tenantName} />
-                                                <AvatarFallback>{getInitials(conv.tenantName)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 overflow-hidden">
-                                                <div className="flex justify-between items-center">
-                                                     <p className="font-semibold truncate text-sm">{conv.tenantName}</p>
-                                                     {conv.unreadCount > 0 && (
-                                                        <Badge variant="destructive" className="h-5 px-1.5 text-xs">{conv.unreadCount}</Badge>
-                                                     )}
-                                                </div>
-                                                <p className="text-xs text-muted-foreground truncate">{conv.listingTitle}</p>
-                                                <p className="text-xs text-muted-foreground truncate mt-0.5">{conv.lastMessage.text}</p>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </ScrollArea>
+                {/* Conversation List - Hidden on mobile, shown in Sheet */}
+                <Card className="hidden md:flex md:flex-col min-h-0 shadow-md">
+                    <ConversationListContent />
                 </Card>
 
                 {/* Message View */}
-                <Card className="md:col-span-2 lg:col-span-3 flex flex-col min-h-0 shadow-md"> {/* Flex column */}
+                <Card className={cn(
+                    "flex flex-col min-h-0 shadow-md",
+                    isMobile && !selectedConversation ? "hidden" : "" // Hide on mobile if no conversation selected
+                    )}>
                     {selectedConversation ? (
                         <>
-                            <CardHeader className="border-b">
-                                <CardTitle className="text-lg">{selectedConversation.tenantName}</CardTitle>
-                                <CardDescription>Regarding: <Link href={`/listings/${selectedConversation.listingId}`} target="_blank" className="text-primary hover:underline">{selectedConversation.listingTitle}</Link></CardDescription>
+                            <CardHeader className="border-b flex flex-row items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    {/* Mobile Conversation List Trigger */}
+                                    {isMobile && (
+                                        <Sheet open={mobileListOpen} onOpenChange={setMobileListOpen}>
+                                            <SheetTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="mr-2">
+                                                    <PanelLeft className="h-5 w-5" />
+                                                </Button>
+                                            </SheetTrigger>
+                                            <SheetContent side="left" className="p-0 flex flex-col w-full max-w-xs">
+                                                <ConversationListContent />
+                                            </SheetContent>
+                                        </Sheet>
+                                    )}
+                                    <div>
+                                        <CardTitle className="text-lg">{selectedConversation.tenantName}</CardTitle>
+                                        <CardDescription>Regarding: <Link href={`/listings/${selectedConversation.listingId}`} target="_blank" className="text-primary hover:underline">{selectedConversation.listingTitle}</Link></CardDescription>
+                                    </div>
+                                </div>
+                                {/* Optional: Add more actions like Archive */}
                             </CardHeader>
+
 
                             <ScrollArea className="flex-1 p-4 space-y-4 min-h-0"> {/* ScrollArea takes remaining space */}
                                 {isLoadingMessages ? (
@@ -362,13 +404,13 @@ export default function LandlordMessagesPage() {
                                             >
                                                 <div
                                                     className={cn(
-                                                        "max-w-[75%] p-3 rounded-lg",
+                                                        "max-w-[75%] p-3 rounded-lg shadow-sm", // Added shadow
                                                         msg.senderId === 'landlord'
                                                             ? "bg-primary text-primary-foreground"
                                                             : "bg-muted text-foreground"
                                                     )}
                                                 >
-                                                    <p className="text-sm">{msg.text}</p>
+                                                    <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p> {/* Allow line breaks */}
                                                     <p className={cn(
                                                         "text-xs mt-1",
                                                          msg.senderId === 'landlord' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left"
@@ -384,17 +426,17 @@ export default function LandlordMessagesPage() {
                             </ScrollArea>
 
                             {/* Message Input */}
-                            <CardContent className="p-4 border-t">
+                            <CardContent className="p-4 border-t mt-auto"> {/* Ensure input sticks to bottom */}
                                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                                     <Input
                                         placeholder="Type your message..."
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         disabled={isSending || isLoadingMessages}
+                                        aria-label="Message Input"
                                     />
-                                    <Button type="submit" size="icon" disabled={!newMessage.trim() || isSending || isLoadingMessages}>
+                                    <Button type="submit" size="icon" disabled={!newMessage.trim() || isSending || isLoadingMessages} aria-label="Send Message">
                                         {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                                        <span className="sr-only">Send message</span>
                                     </Button>
                                      {/* TODO: Add Archive Button? */}
                                      {/* <Button type="button" variant="outline" size="icon" disabled={isSending || isLoadingMessages} title="Archive Conversation">
@@ -404,7 +446,21 @@ export default function LandlordMessagesPage() {
                             </CardContent>
                         </>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-10">
+                        <div className={cn("flex flex-col items-center justify-center h-full text-center p-10",
+                            isMobile ? "" : "hidden md:flex" // Hide initial placeholder on mobile, show on desktop
+                            )}>
+                             {isMobile && (
+                                <Sheet open={mobileListOpen} onOpenChange={setMobileListOpen}>
+                                    <SheetTrigger asChild>
+                                        <Button variant="outline" className="mb-4">
+                                            <PanelLeft className="mr-2 h-4 w-4" /> View Conversations
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent side="left" className="p-0 flex flex-col w-full max-w-xs">
+                                        <ConversationListContent />
+                                    </SheetContent>
+                                </Sheet>
+                             )}
                             <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
                             <p className="text-muted-foreground">Select a conversation to view messages.</p>
                         </div>

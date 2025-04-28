@@ -4,12 +4,13 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle, Search, XCircle } from 'lucide-react'; // Added Loader2, CheckCircle, Search, XCircle
+import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle, Search, XCircle, SlidersHorizontal } from 'lucide-react'; // Added SlidersHorizontal
 import Image from 'next/image';
 import Link from "next/link";
 import { FilterSidebar, FilterValues } from './_components/FilterSidebar'; // Import FilterValues type
 import { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils"; // Import cn for conditional styling
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; // Import Sheet for mobile filters
 
 // Define Advertisement type (should match ManageAdvertsTable)
 type Advertisement = {
@@ -252,6 +253,7 @@ export default function ListingsPage() {
    const [filtersApplied, setFiltersApplied] = useState(false); // Track if filters are active
    const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null); // Store active filters
    const [resetFilterKey, setResetFilterKey] = useState(0); // State to trigger filter reset
+   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
 
     useEffect(() => {
@@ -269,6 +271,7 @@ export default function ListingsPage() {
         console.log("Filtering with:", filters);
         setIsLoadingListings(true); // Start loading indicator
         setActiveFilters(filters); // Store the applied filters
+        setMobileFiltersOpen(false); // Close mobile filter sheet after applying
 
         // Determine if any filter is actually set
         const isAnyFilterSet =
@@ -342,6 +345,7 @@ export default function ListingsPage() {
         setFiltersApplied(false); // Set filters applied state to false
         setActiveFilters(null); // Clear stored active filters
         setResetFilterKey(prev => prev + 1); // Increment key to trigger reset in FilterSidebar
+        setMobileFiltersOpen(false); // Close mobile filter sheet if open
         console.log("Filters Cleared");
     }
 
@@ -374,16 +378,37 @@ export default function ListingsPage() {
             )}
        </div>
 
+      {/* Main content area with sidebar and listings */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Filters Sidebar */}
-        <FilterSidebar onApplyFilters={applyFilters} resetKey={resetFilterKey} />
+        {/* Filters Sidebar - Hidden on small screens, shown as button */}
+         <div className="hidden lg:block">
+           <FilterSidebar onApplyFilters={applyFilters} resetKey={resetFilterKey} />
+         </div>
+
+         {/* Mobile Filter Button & Sheet */}
+         <div className="lg:hidden mb-4">
+            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                        <SlidersHorizontal className="mr-2 h-4 w-4" /> Filters
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full sm:max-w-xs">
+                     {/* Pass the clearFilters function to the mobile sidebar */}
+                    <FilterSidebar onApplyFilters={applyFilters} resetKey={resetFilterKey} />
+                     <Button variant="outline" className="mt-4 w-full" onClick={clearFilters}>
+                        Clear Filters
+                     </Button>
+                </SheetContent>
+            </Sheet>
+         </div>
 
 
         {/* Listings Grid */}
         <div className="flex-1">
-            {/* Clear Filters Button */}
+            {/* Clear Filters Button (shown only on larger screens when filters are applied) */}
             {filtersApplied && (
-                 <div className="mb-4 flex justify-between items-center">
+                 <div className="hidden lg:flex mb-4 justify-between items-center">
                     <span className="text-sm text-muted-foreground">Showing filtered results</span>
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                          <XCircle className="mr-2 h-4 w-4" /> Clear Filters
@@ -407,7 +432,7 @@ export default function ListingsPage() {
                    )}
               </div>
            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {displayedListings.map((listing) => (
                   <Card key={listing.id} className="overflow-hidden flex flex-col shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader className="p-0 relative">
@@ -472,3 +497,4 @@ export default function ListingsPage() {
     </div>
   );
 }
+
