@@ -67,31 +67,37 @@ async function fetchLandingPageAds(): Promise<Advertisement[]> {
 async function fetchRecentProperties(): Promise<RecentProperty[]> {
     console.log("Fetching recent properties for carousel...");
     await new Promise(resolve => setTimeout(resolve, 600)); // Simulate delay
-    // Return mock data (e.g., last 3-4 listings from listings page data)
+    // Return mock data (e.g., last 4-5 diverse listings)
      return [
         {
-            id: 4,
-            title: "Family Duplex with Garden",
-            location: "Magodo Phase 2, Lagos", // Added location
-            imageUrl: "https://picsum.photos/seed/house4_compound/600/400",
+            id: 12,
+            title: "Executive 5-Bedroom Duplex",
+            location: "Asokoro, Abuja",
+            imageUrl: "https://picsum.photos/seed/house12_abuja/600/400",
         },
          {
-            id: 1,
-            title: "Spacious 3 Bedroom Apartment",
-            location: "Lekki Phase 1, Lagos", // Added location
-            imageUrl: "https://picsum.photos/seed/house1_livingroom/600/400",
-        },
-         {
-            id: 'landlord_prop1',
-            title: "My Spacious 3 Bedroom Apartment",
-            location: "Lekki Phase 1, Lagos", // Added location
-            imageUrl: "https://picsum.photos/seed/my_house1_exterior/600/400",
+            id: 8,
+            title: "Newly Built Terrace House",
+            location: "Ajah, Lagos",
+            imageUrl: "https://picsum.photos/seed/house8_terrace/600/400",
         },
         {
-            id: 2,
-            title: "Cozy 2 Bedroom Flat",
-            location: "Yaba, Lagos", // Added location
-            imageUrl: "https://picsum.photos/seed/house2_bedroom/600/400",
+            id: 5,
+            title: "Luxury Penthouse",
+            location: "Ikoyi, Lagos",
+            imageUrl: "https://picsum.photos/seed/house5_penthouse/600/400",
+        },
+         {
+            id: 9,
+            title: "Furnished Short Let - Lekki",
+            location: "Lekki Phase 1, Lagos",
+            imageUrl: "https://picsum.photos/seed/house9_shortlet/600/400",
+        },
+        {
+            id: 10,
+            title: "Detached Bungalow with BQ",
+            location: "Festac Town, Lagos",
+            imageUrl: "https://picsum.photos/seed/house10_bungalow/600/400",
         },
     ];
 }

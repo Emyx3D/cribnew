@@ -1,6 +1,7 @@
+
 'use client'; // Add 'use client' directive
 
-import React, { useState, useEffect } from 'react'; // Import React, useState, useEffect
+import React, { useState, useEffect, use } from 'react'; // Import React, useState, useEffect
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,6 @@ import {
 import Link from 'next/link'; // Import Link
 import { useToast } from '@/hooks/use-toast'; // Import toast
 import { useRouter, useSearchParams } from 'next/navigation'; // Import router
-import { use } from 'react';
 
 
 // Mock function to get listing data by ID - Replace with actual data fetching
@@ -109,6 +109,144 @@ async function getListingData(id: string): Promise<ListingData> {
         verified: true,
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
          landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
+      },
+       {
+        id: 5,
+        title: "Luxury Penthouse",
+        location: "Ikoyi, Lagos",
+        price: "₦15,000,000/year",
+        bedrooms: 4,
+        bathrooms: 5,
+        imageUrl: "https://picsum.photos/seed/house5_penthouse_lg/800/600",
+        gallery: [
+            "https://picsum.photos/seed/house5_penthouse_lg/800/600",
+            "https://picsum.photos/seed/house5_living_lg/800/600",
+            "https://picsum.photos/seed/house5_view_lg/800/600",
+        ],
+        videoUrl: null,
+        verified: true,
+        amenities: ["Swimming Pool", "Gym", "Security", "Parking Space", "Water Heater"],
+        landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
+      },
+      {
+        id: 6,
+        title: "Affordable Self-Contain",
+        location: "Surulere, Lagos",
+        price: "₦450,000/year",
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/house6_selfcon_lg/800/600",
+        gallery: [
+            "https://picsum.photos/seed/house6_selfcon_lg/800/600",
+            "https://picsum.photos/seed/house6_interior_lg/800/600",
+        ],
+        videoUrl: null,
+        verified: true,
+        amenities: ["Water Supply", "Tiled Floors"],
+        landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
+      },
+      {
+        id: 7,
+        title: "Short Let Apartment",
+        location: "Victoria Island, Lagos",
+        price: "₦30,000/week",
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/house7_airbnb_lg/800/600",
+        gallery: [
+            "https://picsum.photos/seed/house7_airbnb_lg/800/600",
+            "https://picsum.photos/seed/house7_interior_lg/800/600",
+        ],
+        videoUrl: null,
+        verified: true,
+        amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi"],
+        landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
+      },
+      {
+        id: 8,
+        title: "Newly Built Terrace House",
+        location: "Ajah, Lagos",
+        price: "₦2,800,000/year",
+        bedrooms: 3,
+        bathrooms: 3,
+        imageUrl: "https://picsum.photos/seed/house8_terrace_lg/800/600",
+        gallery: [
+            "https://picsum.photos/seed/house8_terrace_lg/800/600",
+            "https://picsum.photos/seed/house8_interior_lg/800/600",
+            "https://picsum.photos/seed/house8_kitchen_lg/800/600",
+        ],
+        videoUrl: "https://videos.pexels.com/video-files/855389/855389-hd_1280_720_25fps.mp4", // Sample video
+        verified: true,
+        amenities: ["Gated Estate", "Security", "Water Supply", "Prepaid Meter"],
+        landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
+      },
+      {
+        id: 9,
+        title: "Furnished Short Let - Lekki",
+        location: "Lekki Phase 1, Lagos",
+        price: "₦50,000/week",
+        bedrooms: 2,
+        bathrooms: 2,
+        imageUrl: "https://picsum.photos/seed/house9_shortlet_lg/800/600",
+        gallery: [
+             "https://picsum.photos/seed/house9_shortlet_lg/800/600",
+             "https://picsum.photos/seed/house9_living_lg/800/600",
+             "https://picsum.photos/seed/house9_bedroom_lg/800/600",
+        ],
+        videoUrl: null,
+        verified: true,
+        amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security"],
+        landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
+      },
+      {
+        id: 10,
+        title: "Detached Bungalow with BQ",
+        location: "Festac Town, Lagos",
+        price: "₦2,200,000/year",
+        bedrooms: 3,
+        bathrooms: 3,
+        imageUrl: "https://picsum.photos/seed/house10_bungalow_lg/800/600",
+        gallery: [
+            "https://picsum.photos/seed/house10_bungalow_lg/800/600",
+            "https://picsum.photos/seed/house10_compound_lg/800/600",
+            "https://picsum.photos/seed/house10_interior_lg/800/600",
+        ],
+        videoUrl: null,
+        verified: true,
+        amenities: ["Garden", "Parking Space", "Water Supply"],
+        landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
+      },
+      {
+        id: 11,
+        title: "Student Hostel Room (Self-Contained)",
+        location: "Akoka, Yaba, Lagos",
+        price: "₦350,000/year",
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/house11_hostel_lg/800/600",
+        gallery: ["https://picsum.photos/seed/house11_hostel_lg/800/600"], // Single image example
+        videoUrl: null,
+        verified: false, // Unverified example
+        amenities: ["Water Supply", "Prepaid Meter"],
+        landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" },
+      },
+      {
+        id: 12,
+        title: "Executive 5-Bedroom Duplex",
+        location: "Asokoro, Abuja", // Example outside Lagos
+        price: "₦12,000,000/year",
+        bedrooms: 5,
+        bathrooms: 6,
+        imageUrl: "https://picsum.photos/seed/house12_abuja_lg/800/600",
+        gallery: [
+            "https://picsum.photos/seed/house12_abuja_lg/800/600",
+            "https://picsum.photos/seed/house12_interior_lg/800/600",
+            "https://picsum.photos/seed/house12_pool_lg/800/600",
+        ],
+        videoUrl: "https://videos.pexels.com/video-files/5359829/5359829-hd_1920_1080_25fps.mp4", // Sample video
+        verified: true,
+        amenities: ["Gated Estate", "Security", "Swimming Pool", "Gym", "Generator", "Parking Space"],
+        landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
       },
       // Add the specific listing ID referenced in ManageListingsTable if needed
         {
@@ -244,6 +382,20 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   // The warning about direct `params` access is informational for future compatibility.
   // We will continue accessing `params.id` directly within `useEffect` and use it in the dependency array.
 
+    // Use React.use() to safely access params
+    let listingId: string;
+    try {
+        // Await the promise if params is indeed a promise (future Next.js versions)
+        // listingId = use(params).id; // This syntax might be needed later
+        // For current versions where params is likely an object, direct access is okay
+        listingId = use(Promise.resolve(params.id)); // Wrap in Promise.resolve for `use` hook compatibility
+    } catch (error) {
+        console.error("Error accessing listing ID:", error);
+        // Handle error, maybe return an error component or message
+        return <div>Error loading listing ID.</div>;
+    }
+
+
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
@@ -251,24 +403,14 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   const router = useRouter(); // Initialize router
 
 
-    // Use React.use() to safely access params
-    let listingId: string;
-    try {
-        listingId = use(Promise.resolve(params.id));
-    } catch (error) {
-        console.error("Error accessing listing ID:", error);
-        return <div>Error loading listing.</div>;
-    }
-
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
-
+    // Access listingId obtained using React.use()
     if (!listingId) {
-        console.error("Listing ID is missing from params.");
-        setIsLoading(false); // Stop loading if ID is missing
-        // Optionally redirect or show an error message
-        router.push('/404'); // Example redirect
-        return; // Don't fetch if id is not available
+        console.error("Listing ID is missing.");
+        setIsLoading(false);
+        router.push('/404');
+        return;
     }
 
     setIsLoading(true);
@@ -277,22 +419,19 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
         if (data) {
             setListing(data);
         } else {
-            // Handle listing not found (e.g., show 404 or redirect)
             console.error("Listing not found for ID:", listingId);
              toast({ variant: 'destructive', title: "Not Found", description: "Listing could not be found." });
-             router.push('/listings'); // Redirect back to listings if not found
-            // Optionally redirect: router.push('/404');
+             router.push('/listings');
         }
       })
       .catch(err => {
         console.error("Failed to load listing data:", err);
          toast({ variant: 'destructive', title: "Error", description: "Failed to load listing details." });
-        // Optionally show an error message or redirect
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, [listingId, router, toast]);
+  }, [listingId, router, toast]); // Use listingId from React.use() in dependency array
 
 
   const handleRequestInspection = () => {
@@ -510,4 +649,3 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
     </div>
   );
 }
-

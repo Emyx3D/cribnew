@@ -35,6 +35,7 @@ type Listing = {
     verified: boolean; // Landlord verified status
     amenities: string[];
     propertyType: string; // e.g., "apartment", "duplex"
+    landlordId: string; // Added landlordId to link listings
 };
 
 
@@ -75,6 +76,7 @@ const allListings: Listing[] = [
     verified: true,
     amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
     propertyType: "apartment",
+    landlordId: "landlord_adekunle",
   },
   {
     id: 2,
@@ -87,6 +89,7 @@ const allListings: Listing[] = [
     verified: true,
     amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
     propertyType: "apartment",
+    landlordId: "landlord_funke",
   },
   {
     id: 3,
@@ -99,6 +102,7 @@ const allListings: Listing[] = [
     verified: false,
     amenities: ["Furnished", "Generator", "Air Conditioning"],
     propertyType: "studio",
+    landlordId: "landlord_bovi",
   },
    {
     id: 4,
@@ -111,6 +115,7 @@ const allListings: Listing[] = [
     verified: true,
     amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
     propertyType: "duplex",
+    landlordId: "landlord_dangote",
   },
   // Add more listings for testing filters
    {
@@ -124,6 +129,7 @@ const allListings: Listing[] = [
     verified: true,
     amenities: ["Swimming Pool", "Gym", "Security", "Parking Space", "Water Heater"],
     propertyType: "penthouse",
+    landlordId: "landlord_dangote", // Example reuse of landlord
   },
   {
     id: 6,
@@ -136,6 +142,7 @@ const allListings: Listing[] = [
     verified: true,
     amenities: ["Water Supply", "Tiled Floors"],
     propertyType: "self-contain",
+    landlordId: "landlord_funke", // Example reuse of landlord
   },
    {
     id: 7,
@@ -148,22 +155,23 @@ const allListings: Listing[] = [
     verified: true,
     amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi"],
     propertyType: "airbnb",
+    landlordId: "landlord_adekunle", // Example reuse
   },
    {
-    id: 'landlord_prop1', // Assuming this is a string ID
+    id: 'landlord_prop1', // Existing landlord prop
     title: "My Spacious 3 Bedroom Apartment",
     location: "Lekki Phase 1, Lagos",
     price: "₦3,500,000/year",
     bedrooms: 3,
     bathrooms: 4,
     imageUrl: "https://picsum.photos/seed/my_house1_exterior/400/300", // Updated image
-    verified: true, // Assuming landlord is verified
+    verified: true,
     amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
     propertyType: "apartment",
+    landlordId: "landlord_test", // Specific test landlord
     },
-    // Add another listing for testing links
      {
-        id: 'landlord_prop2', // Assuming this is a string ID
+        id: 'landlord_prop2', // Existing landlord prop
         title: "My Cozy 2 Bedroom Flat",
         location: "Yaba, Lagos",
         price: "₦1,800,000/year",
@@ -173,6 +181,7 @@ const allListings: Listing[] = [
          verified: true,
          amenities: ["Water Supply", "Prepaid Meter"],
          propertyType: "apartment",
+         landlordId: "landlord_test", // Specific test landlord
     },
      // Add listings from FlaggedListingsTable for linking
     {
@@ -185,7 +194,8 @@ const allListings: Listing[] = [
         imageUrl: 'https://picsum.photos/seed/prop123_pool/400/300',
         verified: true, // Landlord might be verified even if listing is flagged
         amenities: ['Swimming Pool', 'Security', 'Parking Space', 'Gym'],
-        propertyType: "penthouse"
+        propertyType: "penthouse",
+        landlordId: "landlord_bigshot", // Specific landlord
     },
     {
         id: 'prop456',
@@ -197,7 +207,8 @@ const allListings: Listing[] = [
         imageUrl: 'https://picsum.photos/seed/prop456_studio/400/300',
         verified: true,
         amenities: ['Water Supply', 'Tiled Floors'],
-        propertyType: "studio"
+        propertyType: "studio",
+        landlordId: "landlord_reasonable", // Specific landlord
     },
     {
         id: 'prop789',
@@ -209,7 +220,74 @@ const allListings: Listing[] = [
         imageUrl: 'https://picsum.photos/seed/prop789_beach/400/300',
         verified: false, // Assume landlord verification might be pending or failed
         amenities: ['Beach Access', 'Balcony', 'Parking Space'],
-        propertyType: "duplex" // Assuming Villa maps to Duplex
+        propertyType: "duplex", // Assuming Villa maps to Duplex
+        landlordId: "landlord_scamface", // Specific landlord
+    },
+      // Add 5 more diverse listings
+    {
+        id: 8,
+        title: "Newly Built Terrace House",
+        location: "Ajah, Lagos",
+        price: "₦2,800,000/year",
+        bedrooms: 3,
+        bathrooms: 3,
+        imageUrl: "https://picsum.photos/seed/house8_terrace/400/300",
+        verified: true,
+        amenities: ["Gated Estate", "Security", "Water Supply", "Prepaid Meter"],
+        propertyType: "terrace",
+        landlordId: "landlord_adekunle",
+    },
+    {
+        id: 9,
+        title: "Furnished Short Let - Lekki",
+        location: "Lekki Phase 1, Lagos",
+        price: "₦50,000/week",
+        bedrooms: 2,
+        bathrooms: 2,
+        imageUrl: "https://picsum.photos/seed/house9_shortlet/400/300",
+        verified: true,
+        amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security"],
+        propertyType: "airbnb",
+        landlordId: "landlord_test",
+    },
+    {
+        id: 10,
+        title: "Detached Bungalow with BQ",
+        location: "Festac Town, Lagos",
+        price: "₦2,200,000/year",
+        bedrooms: 3,
+        bathrooms: 3,
+        imageUrl: "https://picsum.photos/seed/house10_bungalow/400/300",
+        verified: true,
+        amenities: ["Garden", "Parking Space", "Water Supply"],
+        propertyType: "bungalow",
+        landlordId: "landlord_funke",
+    },
+    {
+        id: 11,
+        title: "Student Hostel Room (Self-Contained)",
+        location: "Akoka, Yaba, Lagos",
+        price: "₦350,000/year",
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/house11_hostel/400/300",
+        verified: false, // Unverified example
+        amenities: ["Water Supply", "Prepaid Meter"],
+        propertyType: "self-contain",
+        landlordId: "landlord_bovi",
+    },
+    {
+        id: 12,
+        title: "Executive 5-Bedroom Duplex",
+        location: "Asokoro, Abuja", // Example outside Lagos
+        price: "₦12,000,000/year",
+        bedrooms: 5,
+        bathrooms: 6,
+        imageUrl: "https://picsum.photos/seed/house12_abuja/400/300",
+        verified: true,
+        amenities: ["Gated Estate", "Security", "Swimming Pool", "Gym", "Generator", "Parking Space"],
+        propertyType: "duplex",
+        landlordId: "landlord_dangote",
     }
 ];
 
@@ -276,8 +354,8 @@ export default function ListingsPage() {
         // Determine if any filter is actually set
         const isAnyFilterSet =
             filters.location ||
-            filters.propertyType ||
-            filters.bedrooms ||
+            (filters.propertyType && filters.propertyType !== 'all') || // Check specifically against 'all'
+            (filters.bedrooms && filters.bedrooms !== 'all') ||       // Check specifically against 'all'
             filters.minPrice !== null ||
             filters.maxPrice !== null ||
             filters.amenities.length > 0;
@@ -318,8 +396,8 @@ export default function ListingsPage() {
                     const { value, frequency } = parsePrice(listing.price);
                     const normalizedPrice = normalizePriceToYearly(value, frequency); // Normalize to yearly for comparison
 
-                    const minMatch = filters.minPrice === null || normalizedPrice >= filters.minPrice;
-                    const maxMatch = filters.maxPrice === null || normalizedPrice <= filters.maxPrice;
+                    const minMatch = filters.minPrice === null || isNaN(filters.minPrice) || normalizedPrice >= filters.minPrice;
+                    const maxMatch = filters.maxPrice === null || isNaN(filters.maxPrice) || normalizedPrice <= filters.maxPrice;
                     return minMatch && maxMatch;
                 });
             }
@@ -393,12 +471,16 @@ export default function ListingsPage() {
                         <SlidersHorizontal className="mr-2 h-4 w-4" /> Filters
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-full sm:max-w-xs">
+                <SheetContent side="left" className="w-full max-w-xs p-0"> {/* Adjusted padding */}
                      {/* Pass the clearFilters function to the mobile sidebar */}
                     <FilterSidebar onApplyFilters={applyFilters} resetKey={resetFilterKey} />
-                     <Button variant="outline" className="mt-4 w-full" onClick={clearFilters}>
-                        Clear Filters
-                     </Button>
+                     {filtersApplied && (
+                        <div className="p-4 border-t">
+                             <Button variant="outline" className="w-full" onClick={clearFilters}>
+                                Clear Filters
+                             </Button>
+                         </div>
+                     )}
                 </SheetContent>
             </Sheet>
          </div>
@@ -424,10 +506,10 @@ export default function ListingsPage() {
               <div className="text-center py-20 border border-dashed rounded-lg">
                   <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4"/>
                   <h2 className="text-xl font-semibold mb-2">No Properties Found</h2>
-                  <p className="text-muted-foreground">Try adjusting your filters or clear them to see all listings.</p>
+                  <p className="text-muted-foreground mb-4">Try adjusting your filters or clear them to see all listings.</p>
                   {filtersApplied && (
-                       <Button variant="link" onClick={clearFilters} className="mt-2">
-                           Clear Filters
+                       <Button variant="outline" onClick={clearFilters} className="mt-2">
+                           <XCircle className="mr-2 h-4 w-4" /> Clear Filters
                        </Button>
                    )}
               </div>
@@ -497,4 +579,3 @@ export default function ListingsPage() {
     </div>
   );
 }
-
