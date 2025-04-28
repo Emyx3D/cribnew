@@ -63,41 +63,41 @@ async function fetchLandingPageAds(): Promise<Advertisement[]> {
 }
 
 // Mock function to fetch recent properties for the carousel
-// TODO: Replace with actual API call
+// Updated locations and image seeds for more realism
 async function fetchRecentProperties(): Promise<RecentProperty[]> {
     console.log("Fetching recent properties for carousel...");
     await new Promise(resolve => setTimeout(resolve, 600)); // Simulate delay
-    // Return mock data (e.g., last 4-5 diverse listings)
+    // Return mock data (e.g., last 5 diverse listings)
      return [
         {
             id: 12,
             title: "Executive 5-Bedroom Duplex",
             location: "Asokoro, Abuja",
-            imageUrl: "https://picsum.photos/seed/house12_abuja/600/400",
+            imageUrl: "https://picsum.photos/seed/asokoro_duplex_pool_carousel/600/400", // Specific seed
         },
          {
             id: 8,
             title: "Newly Built Terrace House",
-            location: "Ajah, Lagos",
-            imageUrl: "https://picsum.photos/seed/house8_terrace/600/400",
+            location: "Wuse 2, Abuja",
+            imageUrl: "https://picsum.photos/seed/abuja_terrace_exterior_carousel/600/400", // Specific seed
         },
         {
             id: 5,
             title: "Luxury Penthouse",
             location: "Ikoyi, Lagos",
-            imageUrl: "https://picsum.photos/seed/house5_penthouse/600/400",
+            imageUrl: "https://picsum.photos/seed/ikoyi_penthouse_view_carousel/600/400", // Specific seed
         },
          {
             id: 9,
-            title: "Furnished Short Let - Lekki",
-            location: "Lekki Phase 1, Lagos",
-            imageUrl: "https://picsum.photos/seed/house9_shortlet/600/400",
+            title: "Modern 2BR Short Let",
+            location: "New GRA, Port Harcourt",
+            imageUrl: "https://picsum.photos/seed/ph_shortlet_modern_carousel/600/400", // Specific seed
         },
         {
             id: 10,
             title: "Detached Bungalow with BQ",
-            location: "Festac Town, Lagos",
-            imageUrl: "https://picsum.photos/seed/house10_bungalow/600/400",
+            location: "Bodija, Ibadan",
+            imageUrl: "https://picsum.photos/seed/ibadan_bungalow_garden_carousel/600/400", // Specific seed
         },
     ];
 }

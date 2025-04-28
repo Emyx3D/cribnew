@@ -21,11 +21,11 @@ import {
 } from "@/components/ui/alert-dialog"; // For inspection request (example)
 import Link from 'next/link'; // Import Link
 import { useToast } from '@/hooks/use-toast'; // Import toast
-import { useRouter, useSearchParams } from 'next/navigation'; // Import router
+import { useRouter } from 'next/navigation'; // Import router
 
 
 // Mock function to get listing data by ID - Replace with actual data fetching
-// Keep this async function outside the component or use useEffect for client-side fetching
+// Updated locations and image seeds for more realism
 async function getListingData(id: string): Promise<ListingData> {
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 100));
@@ -40,12 +40,12 @@ async function getListingData(id: string): Promise<ListingData> {
         bedrooms: 3,
         bathrooms: 4,
         description: "A well-maintained and spacious 3-bedroom flat located in a serene part of Lekki Phase 1. Features include large living areas, modern kitchen fittings, and ample parking space. Close to major roads and amenities.",
-        imageUrl: "https://picsum.photos/seed/house1_livingroom_lg/800/600", // Living room for house 1
+        imageUrl: "https://picsum.photos/seed/lekki_apt_living_lg/800/600", // More specific seed
         gallery: [ // Added gallery
-            "https://picsum.photos/seed/house1_livingroom_lg/800/600",
-            "https://picsum.photos/seed/house1_kitchen_lg/800/600",
-            "https://picsum.photos/seed/house1_bedroom_lg/800/600",
-            "https://picsum.photos/seed/house1_bathroom_lg/800/600",
+            "https://picsum.photos/seed/lekki_apt_living_lg/800/600",
+            "https://picsum.photos/seed/lekki_apt_kitchen_lg/800/600",
+            "https://picsum.photos/seed/lekki_apt_bedroom_lg/800/600",
+            "https://picsum.photos/seed/lekki_apt_bathroom_lg/800/600",
         ],
         videoUrl: "https://videos.pexels.com/video-files/857802/857802-hd_1280_720_25fps.mp4", // Sample video URL
         verified: true,
@@ -60,11 +60,11 @@ async function getListingData(id: string): Promise<ListingData> {
         bedrooms: 2,
         bathrooms: 2,
          description: "A lovely and affordable 2-bedroom flat perfect for young professionals or small families. Located in the heart of Yaba with easy access to transportation. Prepaid electricity meter installed.",
-        imageUrl: "https://picsum.photos/seed/house2_bedroom_lg/800/600", // Bedroom for house 2
+        imageUrl: "https://picsum.photos/seed/yaba_flat_bedroom_lg/800/600", // More specific seed
         gallery: [ // Added gallery
-            "https://picsum.photos/seed/house2_bedroom_lg/800/600",
-            "https://picsum.photos/seed/house2_kitchen_lg/800/600",
-            "https://picsum.photos/seed/house2_exterior_lg/800/600",
+            "https://picsum.photos/seed/yaba_flat_bedroom_lg/800/600",
+            "https://picsum.photos/seed/yaba_flat_kitchen_lg/800/600",
+            "https://picsum.photos/seed/yaba_flat_exterior_lg/800/600",
         ],
         videoUrl: null, // No video
         verified: true,
@@ -79,11 +79,11 @@ async function getListingData(id: string): Promise<ListingData> {
         bedrooms: 1,
         bathrooms: 1,
          description: "Compact and modern studio apartment in the secure and quiet Ikeja GRA. Ideal for singles. Comes furnished with basic amenities and has a backup generator.",
-        imageUrl: "https://picsum.photos/seed/house3_bathroom_lg/800/600", // Bathroom for house 3
+        imageUrl: "https://picsum.photos/seed/ikeja_studio_interior_lg/800/600", // More specific seed
         gallery: [ // Added gallery
-            "https://picsum.photos/seed/house3_studio_lg/800/600",
-            "https://picsum.photos/seed/house3_bathroom_lg/800/600",
-            "https://picsum.photos/seed/house3_entrance_lg/800/600",
+            "https://picsum.photos/seed/ikeja_studio_interior_lg/800/600",
+            "https://picsum.photos/seed/ikeja_studio_bathroom_lg/800/600",
+            "https://picsum.photos/seed/ikeja_studio_entrance_lg/800/600",
         ],
         videoUrl: null, // No video
         verified: false, // Example of unverified landlord
@@ -98,12 +98,12 @@ async function getListingData(id: string): Promise<ListingData> {
         bedrooms: 4,
         bathrooms: 5,
         description: "Large family-sized duplex in a gated estate in Magodo Phase 2. Features a private garden, ample parking, water heater in all bathrooms, and good security.",
-        imageUrl: "https://picsum.photos/seed/house4_compound_lg/800/600", // Compound/Exterior for house 4
+        imageUrl: "https://picsum.photos/seed/magodo_duplex_exterior_lg/800/600", // More specific seed
         gallery: [ // Added gallery
-            "https://picsum.photos/seed/house4_compound_lg/800/600",
-            "https://picsum.photos/seed/house4_livingroom_lg/800/600",
-            "https://picsum.photos/seed/house4_garden_lg/800/600",
-            "https://picsum.photos/seed/house4_masterbedroom_lg/800/600",
+            "https://picsum.photos/seed/magodo_duplex_exterior_lg/800/600",
+            "https://picsum.photos/seed/magodo_duplex_livingroom_lg/800/600",
+            "https://picsum.photos/seed/magodo_duplex_garden_lg/800/600",
+            "https://picsum.photos/seed/magodo_duplex_masterbedroom_lg/800/600",
         ],
          videoUrl: "https://videos.pexels.com/video-files/5997169/5997169-hd_1280_720_30fps.mp4", // Sample video URL
         verified: true,
@@ -117,11 +117,11 @@ async function getListingData(id: string): Promise<ListingData> {
         price: "₦15,000,000/year",
         bedrooms: 4,
         bathrooms: 5,
-        imageUrl: "https://picsum.photos/seed/house5_penthouse_lg/800/600",
+        imageUrl: "https://picsum.photos/seed/ikoyi_penthouse_view_lg/800/600", // More specific seed
         gallery: [
-            "https://picsum.photos/seed/house5_penthouse_lg/800/600",
-            "https://picsum.photos/seed/house5_living_lg/800/600",
-            "https://picsum.photos/seed/house5_view_lg/800/600",
+            "https://picsum.photos/seed/ikoyi_penthouse_view_lg/800/600",
+            "https://picsum.photos/seed/ikoyi_penthouse_living_lg/800/600",
+            "https://picsum.photos/seed/ikoyi_penthouse_balcony_lg/800/600",
         ],
         videoUrl: null,
         verified: true,
@@ -135,10 +135,10 @@ async function getListingData(id: string): Promise<ListingData> {
         price: "₦450,000/year",
         bedrooms: 1,
         bathrooms: 1,
-        imageUrl: "https://picsum.photos/seed/house6_selfcon_lg/800/600",
+        imageUrl: "https://picsum.photos/seed/surulere_selfcon_room_lg/800/600", // More specific seed
         gallery: [
-            "https://picsum.photos/seed/house6_selfcon_lg/800/600",
-            "https://picsum.photos/seed/house6_interior_lg/800/600",
+            "https://picsum.photos/seed/surulere_selfcon_room_lg/800/600",
+            "https://picsum.photos/seed/surulere_selfcon_interior_lg/800/600",
         ],
         videoUrl: null,
         verified: true,
@@ -152,10 +152,10 @@ async function getListingData(id: string): Promise<ListingData> {
         price: "₦30,000/week",
         bedrooms: 1,
         bathrooms: 1,
-        imageUrl: "https://picsum.photos/seed/house7_airbnb_lg/800/600",
+        imageUrl: "https://picsum.photos/seed/vi_shortlet_living_lg/800/600", // More specific seed
         gallery: [
-            "https://picsum.photos/seed/house7_airbnb_lg/800/600",
-            "https://picsum.photos/seed/house7_interior_lg/800/600",
+            "https://picsum.photos/seed/vi_shortlet_living_lg/800/600",
+            "https://picsum.photos/seed/vi_shortlet_interior_lg/800/600",
         ],
         videoUrl: null,
         verified: true,
@@ -165,15 +165,15 @@ async function getListingData(id: string): Promise<ListingData> {
       {
         id: 8,
         title: "Newly Built Terrace House",
-        location: "Ajah, Lagos",
-        price: "₦2,800,000/year",
+        location: "Wuse 2, Abuja", // Changed Location
+        price: "₦4,800,000/year",
         bedrooms: 3,
         bathrooms: 3,
-        imageUrl: "https://picsum.photos/seed/house8_terrace_lg/800/600",
+        imageUrl: "https://picsum.photos/seed/abuja_terrace_exterior_lg/800/600", // Specific seed
         gallery: [
-            "https://picsum.photos/seed/house8_terrace_lg/800/600",
-            "https://picsum.photos/seed/house8_interior_lg/800/600",
-            "https://picsum.photos/seed/house8_kitchen_lg/800/600",
+            "https://picsum.photos/seed/abuja_terrace_exterior_lg/800/600",
+            "https://picsum.photos/seed/abuja_terrace_interior_lg/800/600",
+            "https://picsum.photos/seed/abuja_terrace_kitchen_lg/800/600",
         ],
         videoUrl: "https://videos.pexels.com/video-files/855389/855389-hd_1280_720_25fps.mp4", // Sample video
         verified: true,
@@ -182,16 +182,16 @@ async function getListingData(id: string): Promise<ListingData> {
       },
       {
         id: 9,
-        title: "Furnished Short Let - Lekki",
-        location: "Lekki Phase 1, Lagos",
-        price: "₦50,000/week",
+        title: "Modern 2BR Short Let",
+        location: "New GRA, Port Harcourt", // Changed Location
+        price: "₦40,000/week",
         bedrooms: 2,
         bathrooms: 2,
-        imageUrl: "https://picsum.photos/seed/house9_shortlet_lg/800/600",
+        imageUrl: "https://picsum.photos/seed/ph_shortlet_modern_lg/800/600", // Specific seed
         gallery: [
-             "https://picsum.photos/seed/house9_shortlet_lg/800/600",
-             "https://picsum.photos/seed/house9_living_lg/800/600",
-             "https://picsum.photos/seed/house9_bedroom_lg/800/600",
+             "https://picsum.photos/seed/ph_shortlet_modern_lg/800/600",
+             "https://picsum.photos/seed/ph_shortlet_living_lg/800/600",
+             "https://picsum.photos/seed/ph_shortlet_bedroom_lg/800/600",
         ],
         videoUrl: null,
         verified: true,
@@ -201,15 +201,15 @@ async function getListingData(id: string): Promise<ListingData> {
       {
         id: 10,
         title: "Detached Bungalow with BQ",
-        location: "Festac Town, Lagos",
+        location: "Bodija, Ibadan", // Changed Location
         price: "₦2,200,000/year",
         bedrooms: 3,
         bathrooms: 3,
-        imageUrl: "https://picsum.photos/seed/house10_bungalow_lg/800/600",
+        imageUrl: "https://picsum.photos/seed/ibadan_bungalow_garden_lg/800/600", // Specific seed
         gallery: [
-            "https://picsum.photos/seed/house10_bungalow_lg/800/600",
-            "https://picsum.photos/seed/house10_compound_lg/800/600",
-            "https://picsum.photos/seed/house10_interior_lg/800/600",
+            "https://picsum.photos/seed/ibadan_bungalow_garden_lg/800/600",
+            "https://picsum.photos/seed/ibadan_bungalow_compound_lg/800/600",
+            "https://picsum.photos/seed/ibadan_bungalow_interior_lg/800/600",
         ],
         videoUrl: null,
         verified: true,
@@ -219,12 +219,12 @@ async function getListingData(id: string): Promise<ListingData> {
       {
         id: 11,
         title: "Student Hostel Room (Self-Contained)",
-        location: "Akoka, Yaba, Lagos",
-        price: "₦350,000/year",
+        location: "Samaru, Zaria", // Changed Location
+        price: "₦250,000/year",
         bedrooms: 1,
         bathrooms: 1,
-        imageUrl: "https://picsum.photos/seed/house11_hostel_lg/800/600",
-        gallery: ["https://picsum.photos/seed/house11_hostel_lg/800/600"], // Single image example
+        imageUrl: "https://picsum.photos/seed/zaria_hostel_room_lg/800/600", // Specific seed
+        gallery: ["https://picsum.photos/seed/zaria_hostel_room_lg/800/600"], // Single image example
         videoUrl: null,
         verified: false, // Unverified example
         amenities: ["Water Supply", "Prepaid Meter"],
@@ -233,15 +233,15 @@ async function getListingData(id: string): Promise<ListingData> {
       {
         id: 12,
         title: "Executive 5-Bedroom Duplex",
-        location: "Asokoro, Abuja", // Example outside Lagos
+        location: "Asokoro, Abuja", // Kept Abuja for variety
         price: "₦12,000,000/year",
         bedrooms: 5,
         bathrooms: 6,
-        imageUrl: "https://picsum.photos/seed/house12_abuja_lg/800/600",
+        imageUrl: "https://picsum.photos/seed/asokoro_duplex_pool_lg/800/600", // Specific seed
         gallery: [
-            "https://picsum.photos/seed/house12_abuja_lg/800/600",
-            "https://picsum.photos/seed/house12_interior_lg/800/600",
-            "https://picsum.photos/seed/house12_pool_lg/800/600",
+            "https://picsum.photos/seed/asokoro_duplex_pool_lg/800/600",
+            "https://picsum.photos/seed/asokoro_duplex_interior_lg/800/600",
+            "https://picsum.photos/seed/asokoro_duplex_gate_lg/800/600",
         ],
         videoUrl: "https://videos.pexels.com/video-files/5359829/5359829-hd_1920_1080_25fps.mp4", // Sample video
         verified: true,
@@ -256,11 +256,11 @@ async function getListingData(id: string): Promise<ListingData> {
             price: "₦3,500,000/year",
             bedrooms: 3,
             bathrooms: 4,
-            imageUrl: "https://picsum.photos/seed/my_house1_exterior/800/600", // Updated image
+            imageUrl: "https://picsum.photos/seed/test_landlord_apt_exterior_lg/800/600", // Unique image
             gallery: [
-                "https://picsum.photos/seed/my_house1_exterior/800/600",
-                "https://picsum.photos/seed/my_house1_kitchen/800/600",
-                "https://picsum.photos/seed/my_house1_bedroom/800/600",
+                "https://picsum.photos/seed/test_landlord_apt_exterior_lg/800/600",
+                "https://picsum.photos/seed/test_landlord_apt_kitchen_lg/800/600",
+                "https://picsum.photos/seed/test_landlord_apt_bedroom_lg/800/600",
             ],
              videoUrl: null, // No video
             description: "This is the spacious 3 bedroom apartment listed by the test landlord. Excellent condition.",
@@ -277,10 +277,10 @@ async function getListingData(id: string): Promise<ListingData> {
             price: "₦1,800,000/year",
             bedrooms: 2,
             bathrooms: 2,
-            imageUrl: "https://picsum.photos/seed/my_house2_kitchen/800/600", // Updated image
+            imageUrl: "https://picsum.photos/seed/test_landlord_flat_kitchen_lg/800/600", // Unique image
              gallery: [
-                 "https://picsum.photos/seed/my_house2_kitchen/800/600",
-                 "https://picsum.photos/seed/my_house2_living/800/600",
+                 "https://picsum.photos/seed/test_landlord_flat_kitchen_lg/800/600",
+                 "https://picsum.photos/seed/test_landlord_flat_living_lg/800/600",
              ],
              videoUrl: null, // No video
              description: "Cozy and affordable flat in Yaba.",
@@ -296,8 +296,8 @@ async function getListingData(id: string): Promise<ListingData> {
             price: "₦25,000,000/year",
             bedrooms: 4,
             bathrooms: 5,
-            imageUrl: 'https://picsum.photos/seed/prop123_pool/800/600',
-            gallery: ['https://picsum.photos/seed/prop123_pool/800/600', 'https://picsum.photos/seed/prop123_living/800/600'],
+            imageUrl: 'https://picsum.photos/seed/banana_island_penthouse_pool_lg/800/600', // Specific seed
+            gallery: ['https://picsum.photos/seed/banana_island_penthouse_pool_lg/800/600', 'https://picsum.photos/seed/banana_island_penthouse_living_lg/800/600'],
              videoUrl: null, // No video
             description: 'Ultra-luxury penthouse with amazing views and private pool.',
             verified: true, // Landlord might be verified even if listing is flagged
@@ -311,8 +311,8 @@ async function getListingData(id: string): Promise<ListingData> {
             price: "₦500,000/year",
             bedrooms: 1,
             bathrooms: 1,
-            imageUrl: 'https://picsum.photos/seed/prop456_studio/800/600',
-            gallery: ['https://picsum.photos/seed/prop456_studio/800/600', 'https://picsum.photos/seed/prop456_bathroom/800/600'],
+            imageUrl: 'https://picsum.photos/seed/oshodi_studio_simple_lg/800/600', // Specific seed
+            gallery: ['https://picsum.photos/seed/oshodi_studio_simple_lg/800/600', 'https://picsum.photos/seed/oshodi_studio_bathroom_lg/800/600'],
              videoUrl: null, // No video
             description: 'Affordable studio apartment with basic amenities, close to the market.',
             verified: true,
@@ -326,8 +326,8 @@ async function getListingData(id: string): Promise<ListingData> {
             price: "₦8,000,000/year",
             bedrooms: 5,
             bathrooms: 6,
-            imageUrl: 'https://picsum.photos/seed/prop789_beach/800/600',
-            gallery: ['https://picsum.photos/seed/prop789_beach/800/600', 'https://picsum.photos/seed/prop789_interior/800/600'],
+            imageUrl: 'https://picsum.photos/seed/eleko_villa_beachview_lg/800/600', // Specific seed
+            gallery: ['https://picsum.photos/seed/eleko_villa_beachview_lg/800/600', 'https://picsum.photos/seed/eleko_villa_interior_lg/800/600'],
              videoUrl: null, // No video
             description: 'Spacious beachfront property, available for immediate rent. Great views!',
             verified: false, // Assume landlord verification might be pending or failed
@@ -340,6 +340,9 @@ async function getListingData(id: string): Promise<ListingData> {
    const listing = listings.find(l => String(l.id) === String(id));
 
    if (!listing) {
+     // Simulate throwing a 404 error or return null if not found
+     // For simplicity in this mock, we return null. In a real app, you might throw an error.
+     console.error(`Listing with ID ${id} not found.`);
      return null;
    }
    // Ensure the structure matches ListingData including the gallery
@@ -378,23 +381,12 @@ type ListingData = {
 
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
-  // Note: `React.use()` is not suitable for Client Components in this context.
-  // The warning about direct `params` access is informational for future compatibility.
-  // We will continue accessing `params.id` directly within `useEffect` and use it in the dependency array.
+  // React.use() is intended for Server Components or specific hooks like `use`.
+  // For Client Components accessing route params, direct access or `useParams` (from 'next/navigation') inside the component is standard.
+  // The console warning is a forward-compatibility hint.
 
-    // Use React.use() to safely access params
-    let listingId: string;
-    try {
-        // Await the promise if params is indeed a promise (future Next.js versions)
-        // listingId = use(params).id; // This syntax might be needed later
-        // For current versions where params is likely an object, direct access is okay
-        listingId = use(Promise.resolve(params.id)); // Wrap in Promise.resolve for `use` hook compatibility
-    } catch (error) {
-        console.error("Error accessing listing ID:", error);
-        // Handle error, maybe return an error component or message
-        return <div>Error loading listing ID.</div>;
-    }
-
+  // Since this is a Client Component, we access params directly within useEffect
+  // or store it in state if needed outside useEffect.
 
   const [listing, setListing] = useState<ListingData>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -405,11 +397,13 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
-    // Access listingId obtained using React.use()
+     // Access params.id inside useEffect to avoid top-level access warning
+     // Direct access is still supported in this Next.js version, despite the warning.
+    const listingId = params.id;
     if (!listingId) {
-        console.error("Listing ID is missing.");
-        setIsLoading(false);
-        router.push('/404');
+        console.error("Listing ID is missing from params.");
+        setIsLoading(false); // Stop loading if ID is missing
+        router.push('/404'); // Redirect to a 404 page
         return;
     }
 
@@ -431,7 +425,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [listingId, router, toast]); // Use listingId from React.use() in dependency array
+  }, [params.id, router, toast]); // Correctly pass params.id
 
 
   const handleRequestInspection = () => {

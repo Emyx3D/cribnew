@@ -11,6 +11,7 @@ import { FilterSidebar, FilterValues } from './_components/FilterSidebar'; // Im
 import { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils"; // Import cn for conditional styling
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; // Import Sheet for mobile filters
+import { useIsMobile } from '@/hooks/use-mobile'; // Import hook for mobile check
 
 // Define Advertisement type (should match ManageAdvertsTable)
 type Advertisement = {
@@ -64,6 +65,7 @@ async function fetchListingsPageAds(): Promise<Advertisement[]> {
 }
 
 // Mock data for ALL listings - replace with actual data fetching
+// Updated locations and image seeds for more realism
 const allListings: Listing[] = [
   {
     id: 1,
@@ -72,7 +74,7 @@ const allListings: Listing[] = [
     price: "₦3,500,000/year",
     bedrooms: 3,
     bathrooms: 4,
-    imageUrl: "https://picsum.photos/seed/house1_livingroom/400/300",
+    imageUrl: "https://picsum.photos/seed/lekki_apt_living/400/300",
     verified: true,
     amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
     propertyType: "apartment",
@@ -85,7 +87,7 @@ const allListings: Listing[] = [
     price: "₦1,800,000/year",
     bedrooms: 2,
     bathrooms: 2,
-    imageUrl: "https://picsum.photos/seed/house2_bedroom/400/300",
+    imageUrl: "https://picsum.photos/seed/yaba_flat_bedroom/400/300",
     verified: true,
     amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
     propertyType: "apartment",
@@ -98,7 +100,7 @@ const allListings: Listing[] = [
     price: "₦1,200,000/year",
     bedrooms: 1,
     bathrooms: 1,
-    imageUrl: "https://picsum.photos/seed/house3_studio/400/300",
+    imageUrl: "https://picsum.photos/seed/ikeja_studio_interior/400/300",
     verified: false,
     amenities: ["Furnished", "Generator", "Air Conditioning"],
     propertyType: "studio",
@@ -111,21 +113,20 @@ const allListings: Listing[] = [
     price: "₦5,000,000/year",
     bedrooms: 4,
     bathrooms: 5,
-    imageUrl: "https://picsum.photos/seed/house4_compound/400/300",
+    imageUrl: "https://picsum.photos/seed/magodo_duplex_exterior/400/300",
     verified: true,
     amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
     propertyType: "duplex",
     landlordId: "landlord_dangote",
   },
-  // Add more listings for testing filters
-   {
+  {
     id: 5,
     title: "Luxury Penthouse",
     location: "Ikoyi, Lagos",
     price: "₦15,000,000/year",
     bedrooms: 4,
     bathrooms: 5,
-    imageUrl: "https://picsum.photos/seed/house5_penthouse/400/300",
+    imageUrl: "https://picsum.photos/seed/ikoyi_penthouse_view/400/300",
     verified: true,
     amenities: ["Swimming Pool", "Gym", "Security", "Parking Space", "Water Heater"],
     propertyType: "penthouse",
@@ -138,7 +139,7 @@ const allListings: Listing[] = [
     price: "₦450,000/year",
     bedrooms: 1,
     bathrooms: 1,
-    imageUrl: "https://picsum.photos/seed/house6_selfcon/400/300",
+    imageUrl: "https://picsum.photos/seed/surulere_selfcon_room/400/300",
     verified: true,
     amenities: ["Water Supply", "Tiled Floors"],
     propertyType: "self-contain",
@@ -151,7 +152,7 @@ const allListings: Listing[] = [
     price: "₦30,000/week", // Weekly price example
     bedrooms: 1,
     bathrooms: 1,
-    imageUrl: "https://picsum.photos/seed/house7_airbnb/400/300",
+    imageUrl: "https://picsum.photos/seed/vi_shortlet_living/400/300",
     verified: true,
     amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi"],
     propertyType: "airbnb",
@@ -164,7 +165,7 @@ const allListings: Listing[] = [
     price: "₦3,500,000/year",
     bedrooms: 3,
     bathrooms: 4,
-    imageUrl: "https://picsum.photos/seed/my_house1_exterior/400/300", // Updated image
+    imageUrl: "https://picsum.photos/seed/test_landlord_apt_exterior/400/300", // Unique image
     verified: true,
     amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
     propertyType: "apartment",
@@ -177,7 +178,7 @@ const allListings: Listing[] = [
         price: "₦1,800,000/year",
         bedrooms: 2,
         bathrooms: 2,
-        imageUrl: "https://picsum.photos/seed/my_house2_kitchen/400/300", // Updated image
+        imageUrl: "https://picsum.photos/seed/test_landlord_flat_kitchen/400/300", // Unique image
          verified: true,
          amenities: ["Water Supply", "Prepaid Meter"],
          propertyType: "apartment",
@@ -191,7 +192,7 @@ const allListings: Listing[] = [
         price: "₦25,000,000/year",
         bedrooms: 4,
         bathrooms: 5,
-        imageUrl: 'https://picsum.photos/seed/prop123_pool/400/300',
+        imageUrl: 'https://picsum.photos/seed/banana_island_penthouse_pool/400/300',
         verified: true, // Landlord might be verified even if listing is flagged
         amenities: ['Swimming Pool', 'Security', 'Parking Space', 'Gym'],
         propertyType: "penthouse",
@@ -204,7 +205,7 @@ const allListings: Listing[] = [
         price: "₦500,000/year",
         bedrooms: 1,
         bathrooms: 1,
-        imageUrl: 'https://picsum.photos/seed/prop456_studio/400/300',
+        imageUrl: 'https://picsum.photos/seed/oshodi_studio_simple/400/300',
         verified: true,
         amenities: ['Water Supply', 'Tiled Floors'],
         propertyType: "studio",
@@ -217,21 +218,21 @@ const allListings: Listing[] = [
         price: "₦8,000,000/year",
         bedrooms: 5,
         bathrooms: 6,
-        imageUrl: 'https://picsum.photos/seed/prop789_beach/400/300',
+        imageUrl: 'https://picsum.photos/seed/eleko_villa_beachview/400/300',
         verified: false, // Assume landlord verification might be pending or failed
         amenities: ['Beach Access', 'Balcony', 'Parking Space'],
         propertyType: "duplex", // Assuming Villa maps to Duplex
         landlordId: "landlord_scamface", // Specific landlord
     },
-      // Add 5 more diverse listings
+      // Add 5 more diverse listings with different locations
     {
         id: 8,
         title: "Newly Built Terrace House",
-        location: "Ajah, Lagos",
-        price: "₦2,800,000/year",
+        location: "Wuse 2, Abuja", // Changed Location
+        price: "₦4,800,000/year",
         bedrooms: 3,
         bathrooms: 3,
-        imageUrl: "https://picsum.photos/seed/house8_terrace/400/300",
+        imageUrl: "https://picsum.photos/seed/abuja_terrace_exterior/400/300",
         verified: true,
         amenities: ["Gated Estate", "Security", "Water Supply", "Prepaid Meter"],
         propertyType: "terrace",
@@ -239,12 +240,12 @@ const allListings: Listing[] = [
     },
     {
         id: 9,
-        title: "Furnished Short Let - Lekki",
-        location: "Lekki Phase 1, Lagos",
-        price: "₦50,000/week",
+        title: "Modern 2BR Short Let",
+        location: "New GRA, Port Harcourt", // Changed Location
+        price: "₦40,000/week",
         bedrooms: 2,
         bathrooms: 2,
-        imageUrl: "https://picsum.photos/seed/house9_shortlet/400/300",
+        imageUrl: "https://picsum.photos/seed/ph_shortlet_modern/400/300",
         verified: true,
         amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security"],
         propertyType: "airbnb",
@@ -253,11 +254,11 @@ const allListings: Listing[] = [
     {
         id: 10,
         title: "Detached Bungalow with BQ",
-        location: "Festac Town, Lagos",
+        location: "Bodija, Ibadan", // Changed Location
         price: "₦2,200,000/year",
         bedrooms: 3,
         bathrooms: 3,
-        imageUrl: "https://picsum.photos/seed/house10_bungalow/400/300",
+        imageUrl: "https://picsum.photos/seed/ibadan_bungalow_garden/400/300",
         verified: true,
         amenities: ["Garden", "Parking Space", "Water Supply"],
         propertyType: "bungalow",
@@ -266,11 +267,11 @@ const allListings: Listing[] = [
     {
         id: 11,
         title: "Student Hostel Room (Self-Contained)",
-        location: "Akoka, Yaba, Lagos",
-        price: "₦350,000/year",
+        location: "Samaru, Zaria", // Changed Location
+        price: "₦250,000/year",
         bedrooms: 1,
         bathrooms: 1,
-        imageUrl: "https://picsum.photos/seed/house11_hostel/400/300",
+        imageUrl: "https://picsum.photos/seed/zaria_hostel_room/400/300",
         verified: false, // Unverified example
         amenities: ["Water Supply", "Prepaid Meter"],
         propertyType: "self-contain",
@@ -279,11 +280,11 @@ const allListings: Listing[] = [
     {
         id: 12,
         title: "Executive 5-Bedroom Duplex",
-        location: "Asokoro, Abuja", // Example outside Lagos
+        location: "Asokoro, Abuja", // Kept Abuja for variety
         price: "₦12,000,000/year",
         bedrooms: 5,
         bathrooms: 6,
-        imageUrl: "https://picsum.photos/seed/house12_abuja/400/300",
+        imageUrl: "https://picsum.photos/seed/asokoro_duplex_pool/400/300",
         verified: true,
         amenities: ["Gated Estate", "Security", "Swimming Pool", "Gym", "Generator", "Parking Space"],
         propertyType: "duplex",
@@ -332,6 +333,7 @@ export default function ListingsPage() {
    const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null); // Store active filters
    const [resetFilterKey, setResetFilterKey] = useState(0); // State to trigger filter reset
    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+   const isMobile = useIsMobile();
 
 
     useEffect(() => {
@@ -468,12 +470,13 @@ export default function ListingsPage() {
             <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
                 <SheetTrigger asChild>
                     <Button variant="outline" className="w-full">
-                        <SlidersHorizontal className="mr-2 h-4 w-4" /> Filters
+                        <SlidersHorizontal className="mr-2 h-4 w-4" /> Filters {filtersApplied ? `(${displayedListings.length} results)` : ''}
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-full max-w-xs p-0"> {/* Adjusted padding */}
-                     {/* Pass the clearFilters function to the mobile sidebar */}
-                    <FilterSidebar onApplyFilters={applyFilters} resetKey={resetFilterKey} />
+                <SheetContent side="left" className="w-full max-w-xs p-0 flex flex-col"> {/* Adjusted padding & flex */}
+                    <div className="flex-1 overflow-y-auto"> {/* Scrollable content */}
+                       <FilterSidebar onApplyFilters={applyFilters} resetKey={resetFilterKey} />
+                    </div>
                      {filtersApplied && (
                         <div className="p-4 border-t">
                              <Button variant="outline" className="w-full" onClick={clearFilters}>
@@ -491,7 +494,7 @@ export default function ListingsPage() {
             {/* Clear Filters Button (shown only on larger screens when filters are applied) */}
             {filtersApplied && (
                  <div className="hidden lg:flex mb-4 justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Showing filtered results</span>
+                    <span className="text-sm text-muted-foreground">Showing {displayedListings.length} filtered results</span>
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                          <XCircle className="mr-2 h-4 w-4" /> Clear Filters
                     </Button>
