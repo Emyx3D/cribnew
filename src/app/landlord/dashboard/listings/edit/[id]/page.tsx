@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video, Building, Save } from 'lucide-react';
+import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video, Building, Save, Gamepad2 } from 'lucide-react'; // Added Gamepad2 for PS5
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,8 @@ const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/qui
 const ALL_AMENITIES = [
     "Water Supply", "Electricity", "Security", "Parking Space",
     "Furnished", "Air Conditioning", "Tiled Floors", "Prepaid Meter",
-    "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool"
+    "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool",
+    "Wifi", "PS5", // Added Wifi and PS5
 ];
 
 // Custom file validation function
@@ -60,7 +62,7 @@ const editListingFormSchema = z.object({
     bedrooms: z.coerce.number().min(1, 'Must have at least 1 bedroom.'),
     bathrooms: z.coerce.number().min(1, 'Must have at least 1 bathroom.'),
     price: z.string().min(1, 'Price is required.').regex(/^\d+$/, "Price must be a number."),
-    priceFrequency: z.enum(['year', 'month', 'week']),
+    priceFrequency: z.enum(['year', 'month', 'week', 'daily']), // Added 'daily'
     description: z.string().min(20, 'Description must be at least 20 characters.').max(1000, 'Description too long.'),
     amenities: z.array(z.string()).optional(),
     images: z.array(z.instanceof(File)).optional(),
@@ -78,64 +80,276 @@ type EditListingFormValues = z.infer<typeof editListingFormSchema>;
 async function fetchListingForEdit(id: string): Promise<EditListingFormValues | null> {
     console.log(`Fetching listing data for edit: ${id}`);
     await new Promise(resolve => setTimeout(resolve, 800));
-    const existingListings = [
+    // Use the more detailed mock data from ListingDetailPage for consistency
+     const listings = [
+      {
+        id: 1,
+        title: "Spacious 3 Bedroom Apartment",
+        location: "Lekki Phase 1, Lagos",
+        price: "3500000",
+        priceFrequency: 'year',
+        bedrooms: 3,
+        bathrooms: 4,
+        description: "A well-maintained and spacious 3-bedroom flat located in a serene part of Lekki Phase 1. Features include large living areas, modern kitchen fittings, and ample parking space. Close to major roads and amenities.",
+        imageUrl: "https://picsum.photos/seed/lekki_apt_living_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/lekki_apt_living_lg/800/600",
+            "https://picsum.photos/seed/lekki_apt_kitchen_lg/800/600",
+            "https://picsum.photos/seed/lekki_apt_bedroom_lg/800/600",
+            "https://picsum.photos/seed/lekki_apt_bathroom_lg/800/600",
+        ],
+        existingVideoUrl: "https://videos.pexels.com/video-files/857802/857802-hd_1280_720_25fps.mp4",
+        verified: true,
+        amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
+        propertyType: "apartment",
+        landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
+      },
+      {
+        id: 2,
+        title: "Cozy 2 Bedroom Flat",
+        location: "Yaba, Lagos",
+        price: "1800000",
+        priceFrequency: 'year',
+        bedrooms: 2,
+        bathrooms: 2,
+         description: "A lovely and affordable 2-bedroom flat perfect for young professionals or small families. Located in the heart of Yaba with easy access to transportation. Prepaid electricity meter installed.",
+        imageUrl: "https://picsum.photos/seed/yaba_flat_bedroom_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/yaba_flat_bedroom_lg/800/600",
+            "https://picsum.photos/seed/yaba_flat_kitchen_lg/800/600",
+            "https://picsum.photos/seed/yaba_flat_exterior_lg/800/600",
+        ],
+         existingVideoUrl: null,
+        verified: true,
+        amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
+        propertyType: "apartment",
+         landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
+      },
         {
-            id: 'landlord_prop1',
+        id: 3,
+        title: "Modern Studio Apartment",
+        location: "Ikeja GRA, Lagos",
+        price: "1200000",
+        priceFrequency: 'year',
+        bedrooms: 1,
+        bathrooms: 1,
+         description: "Compact and modern studio apartment in the secure and quiet Ikeja GRA. Ideal for singles. Comes furnished with basic amenities and has a backup generator.",
+        imageUrl: "https://picsum.photos/seed/ikeja_studio_interior_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/ikeja_studio_interior_lg/800/600",
+            "https://picsum.photos/seed/ikeja_studio_bathroom_lg/800/600",
+            "https://picsum.photos/seed/ikeja_studio_entrance_lg/800/600",
+        ],
+         existingVideoUrl: null,
+        verified: false,
+        amenities: ["Furnished", "Generator", "Air Conditioning"],
+        propertyType: "studio",
+         landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" },
+      },
+       {
+        id: 4,
+        title: "Family Duplex with Garden",
+        location: "Magodo Phase 2, Lagos",
+        price: "5000000",
+        priceFrequency: 'year',
+        bedrooms: 4,
+        bathrooms: 5,
+        description: "Large family-sized duplex in a gated estate in Magodo Phase 2. Features a private garden, ample parking, water heater in all bathrooms, and good security.",
+        imageUrl: "https://picsum.photos/seed/magodo_duplex_exterior_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/magodo_duplex_exterior_lg/800/600",
+            "https://picsum.photos/seed/magodo_duplex_livingroom_lg/800/600",
+            "https://picsum.photos/seed/magodo_duplex_garden_lg/800/600",
+            "https://picsum.photos/seed/magodo_duplex_masterbedroom_lg/800/600",
+        ],
+         existingVideoUrl: "https://videos.pexels.com/video-files/5997169/5997169-hd_1280_720_30fps.mp4",
+        verified: true,
+        amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
+        propertyType: "duplex",
+         landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
+      },
+       {
+        id: 5,
+        title: "Luxury Penthouse",
+        location: "Ikoyi, Lagos",
+        price: "15000000",
+        priceFrequency: 'year',
+        bedrooms: 4,
+        bathrooms: 5,
+        imageUrl: "https://picsum.photos/seed/ikoyi_penthouse_view_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/ikoyi_penthouse_view_lg/800/600",
+            "https://picsum.photos/seed/ikoyi_penthouse_living_lg/800/600",
+            "https://picsum.photos/seed/ikoyi_penthouse_balcony_lg/800/600",
+        ],
+         existingVideoUrl: null,
+        verified: true,
+        amenities: ["Swimming Pool", "Gym", "Security", "Parking Space", "Water Heater"],
+        propertyType: "penthouse",
+        landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
+      },
+      {
+        id: 6,
+        title: "Affordable Self-Contain",
+        location: "Surulere, Lagos",
+        price: "450000",
+        priceFrequency: 'year',
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/surulere_selfcon_room_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/surulere_selfcon_room_lg/800/600",
+            "https://picsum.photos/seed/surulere_selfcon_interior_lg/800/600",
+        ],
+         existingVideoUrl: null,
+        verified: true,
+        amenities: ["Water Supply", "Tiled Floors"],
+        propertyType: "self-contain",
+        landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
+      },
+      {
+        id: 7,
+        title: "Short Let Apartment",
+        location: "Victoria Island, Lagos",
+        price: "30000",
+        priceFrequency: 'week', // Example weekly
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/vi_shortlet_living_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/vi_shortlet_living_lg/800/600",
+            "https://picsum.photos/seed/vi_shortlet_interior_lg/800/600",
+        ],
+         existingVideoUrl: null,
+        verified: true,
+        amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi", "PS5"], // Added PS5
+        propertyType: "airbnb",
+        landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
+      },
+      {
+        id: 8,
+        title: "Newly Built Terrace House",
+        location: "Wuse 2, Abuja",
+        price: "4800000",
+        priceFrequency: 'year',
+        bedrooms: 3,
+        bathrooms: 3,
+        imageUrl: "https://picsum.photos/seed/abuja_terrace_exterior_lg/800/600",
+        existingImageUrls: [
+            "https://picsum.photos/seed/abuja_terrace_exterior_lg/800/600",
+            "https://picsum.photos/seed/abuja_terrace_interior_lg/800/600",
+            "https://picsum.photos/seed/abuja_terrace_kitchen_lg/800/600",
+        ],
+         existingVideoUrl: "https://videos.pexels.com/video-files/855389/855389-hd_1280_720_25fps.mp4",
+        verified: true,
+        amenities: ["Gated Estate", "Security", "Water Supply", "Prepaid Meter"],
+        propertyType: "terrace",
+        landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
+      },
+      {
+        id: 9,
+        title: "Modern 2BR Short Let",
+        location: "New GRA, Port Harcourt",
+        price: "40000",
+        priceFrequency: 'week', // Example weekly
+        bedrooms: 2,
+        bathrooms: 2,
+        imageUrl: "https://picsum.photos/seed/ph_shortlet_modern_lg/800/600",
+        existingImageUrls: [
+             "https://picsum.photos/seed/ph_shortlet_modern_lg/800/600",
+             "https://picsum.photos/seed/ph_shortlet_living_lg/800/600",
+             "https://picsum.photos/seed/ph_shortlet_bedroom_lg/800/600",
+        ],
+         existingVideoUrl: null,
+        verified: true,
+        amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security"],
+        propertyType: "airbnb",
+        landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
+      },
+       {
+        id: 13,
+        title: "Daily Rental Condo",
+        location: "Maitama, Abuja",
+        price: "50000",
+        priceFrequency: 'daily', // Example daily
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/maitama_condo_daily/800/600",
+        existingImageUrls: [
+             "https://picsum.photos/seed/maitama_condo_daily/800/600",
+             "https://picsum.photos/seed/maitama_condo_interior/800/600",
+        ],
+         existingVideoUrl: null,
+        verified: true,
+        amenities: ["Furnished", "Air Conditioning", "Wifi", "PS5"], // Added PS5
+        propertyType: "airbnb",
+        landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
+      },
+        {
+            id: 'landlord_prop1', // String ID example
             title: "My Spacious 3 Bedroom Apartment",
             location: "Lekki Phase 1, Lagos",
             price: "3500000",
             priceFrequency: 'year',
             bedrooms: 3,
             bathrooms: 4,
-            imageUrl: "https://picsum.photos/seed/my_house1_exterior/400/300",
+            imageUrl: "https://picsum.photos/seed/test_landlord_apt_exterior_lg/800/600",
             existingImageUrls: [
-                 "https://picsum.photos/seed/my_house1_exterior/800/600",
-                 "https://picsum.photos/seed/my_house1_kitchen/800/600",
-                 "https://picsum.photos/seed/my_house1_bedroom/800/600",
+                "https://picsum.photos/seed/test_landlord_apt_exterior_lg/800/600",
+                "https://picsum.photos/seed/test_landlord_apt_kitchen_lg/800/600",
+                "https://picsum.photos/seed/test_landlord_apt_bedroom_lg/800/600",
             ],
-            existingVideoUrl: null,
+             existingVideoUrl: null,
             description: "This is the spacious 3 bedroom apartment listed by the test landlord. Excellent condition.",
+            verified: true,
+            status: 'active',
             amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
             propertyType: "apartment",
+            landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
         },
          {
-            id: 'landlord_prop2',
+            id: 'landlord_prop2', // String ID example
             title: "My Cozy 2 Bedroom Flat",
             location: "Yaba, Lagos",
             price: "1800000",
             priceFrequency: 'year',
             bedrooms: 2,
             bathrooms: 2,
-            imageUrl: "https://picsum.photos/seed/my_house2_kitchen/400/300",
-            existingImageUrls: [
-                 "https://picsum.photos/seed/my_house2_kitchen/800/600",
-                 "https://picsum.photos/seed/my_house2_living/800/600",
+            imageUrl: "https://picsum.photos/seed/test_landlord_flat_kitchen_lg/800/600",
+             existingImageUrls: [
+                 "https://picsum.photos/seed/test_landlord_flat_kitchen_lg/800/600",
+                 "https://picsum.photos/seed/test_landlord_flat_living_lg/800/600",
              ],
-            existingVideoUrl: null,
+             existingVideoUrl: null,
              description: "Cozy and affordable flat in Yaba.",
-            amenities: ["Water Supply", "Prepaid Meter"],
-            propertyType: "apartment",
+             verified: true,
+             amenities: ["Water Supply", "Prepaid Meter"],
+             propertyType: "apartment",
+             landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
         },
     ];
 
-    const listing = existingListings.find(l => l.id === id);
+
+    const listing = listings.find(l => String(l.id) === String(id));
     if (!listing) return null;
 
-    return {
-        id: listing.id,
-        title: listing.title,
-        location: listing.location,
-        propertyType: listing.propertyType,
-        bedrooms: listing.bedrooms,
-        bathrooms: listing.bathrooms,
-        price: listing.price,
-        priceFrequency: listing.priceFrequency as 'year' | 'month' | 'week',
-        description: listing.description,
-        amenities: listing.amenities,
-        images: undefined,
-        video: undefined,
-         ...(listing.existingImageUrls && { existingImageUrls: listing.existingImageUrls }),
-         ...(listing.existingVideoUrl && { existingVideoUrl: listing.existingVideoUrl }),
+    // Map fetched data to form values, handling potential missing fields gracefully
+     return {
+        id: String(listing.id), // Ensure ID is a string
+        title: listing.title || '',
+        location: listing.location || '',
+        propertyType: listing.propertyType || '',
+        bedrooms: listing.bedrooms || 1,
+        bathrooms: listing.bathrooms || 1,
+        price: String(listing.price) || '', // Ensure price is a string
+        priceFrequency: listing.priceFrequency as 'year' | 'month' | 'week' | 'daily' || 'year', // Ensure valid enum or default
+        description: listing.description || '',
+        amenities: listing.amenities || [],
+        images: undefined, // Start with no new images
+        video: undefined, // Start with no new video
+        // Include existing URLs to display them
+         existingImageUrls: (listing as any).existingImageUrls || [],
+         existingVideoUrl: (listing as any).existingVideoUrl || null,
     };
 }
 
@@ -174,7 +388,7 @@ export default function EditListingPageWrapper() {
 function EditListingPage() {
     const router = useRouter();
     const params = useParams();
-    const listingId = params.id as string;
+    const listingId = params?.id as string; // Added optional chaining for safety
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [isFetchingData, setIsFetchingData] = useState(true);
@@ -185,7 +399,7 @@ function EditListingPage() {
     const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
     const [wasExistingVideoRemoved, setWasExistingVideoRemoved] = useState(false); // Track if existing video was removed
     const [videoFileName, setVideoFileName] = useState<string | null>(null);
-    const [isVerified, setIsVerified] = useState<boolean | null>(true);
+    const [isVerified, setIsVerified] = useState<boolean | null>(true); // Assume verified until checked
     const [imageCleanupNeeded, setImageCleanupNeeded] = useState(false);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -201,14 +415,34 @@ function EditListingPage() {
             router.push('/landlord/dashboard/listings');
             return;
         }
+         // Check verification status from sessionStorage
+         try {
+            const verificationStatus = sessionStorage.getItem('landlordVerificationStatus') === 'verified';
+            const role = sessionStorage.getItem('userRole');
+            if(role !== 'landlord' || !verificationStatus) {
+                 setIsVerified(false);
+                 toast({
+                    variant: 'destructive',
+                    title: "Verification Required",
+                    description: "You need to be a verified landlord to edit listings.",
+                    duration: 5000,
+                 });
+            } else {
+                setIsVerified(true);
+            }
+         } catch (error) {
+            setIsVerified(false); // Assume not verified if error accessing storage
+            toast({ variant: 'destructive', title: "Error", description: "Could not verify landlord status." });
+         }
 
         setIsFetchingData(true);
         fetchListingForEdit(listingId)
             .then(data => {
                 if (data) {
-                    form.reset(data);
+                    form.reset(data); // Reset form with fetched data
                     setExistingImageUrls((data as any).existingImageUrls || []);
                     setExistingVideoUrl((data as any).existingVideoUrl || null);
+                     // Ensure numeric fields are numbers, but price remains string for now
                     form.setValue('price', String(data.price));
                     form.setValue('bedrooms', Number(data.bedrooms));
                     form.setValue('bathrooms', Number(data.bathrooms));
@@ -264,15 +498,27 @@ function EditListingPage() {
     const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!isVerified) return;
         const files = Array.from(event.target.files || []);
-        const currentImageCount = existingImageUrls.length + imagePreviews.length - imagesToRemove.length;
+        // Calculate current effective image count (existing - removed + new)
+        const currentImageCount = existingImageUrls.length - imagesToRemove.length + imagePreviews.length;
         const availableSlots = MAX_IMAGES - currentImageCount;
+
+        if (availableSlots <= 0) {
+             toast({
+                variant: 'destructive',
+                title: "Image Limit Reached",
+                description: `Maximum of ${MAX_IMAGES} images allowed.`,
+            });
+             event.target.value = ''; // Clear the input
+            return;
+        }
+
         const filesToAdd = files.slice(0, availableSlots);
 
         if (files.length > availableSlots) {
             toast({
                 variant: 'destructive',
                 title: "Image Limit Exceeded",
-                description: `You can only add ${availableSlots} more image(s). Maximum is ${MAX_IMAGES}.`,
+                description: `You can only add ${availableSlots} more image(s). ${files.length - filesToAdd.length} file(s) were not added.`,
             });
         }
 
@@ -287,10 +533,12 @@ function EditListingPage() {
             newPreviews.push(URL.createObjectURL(file));
         });
 
-        appendImage(validatedFiles);
-        setImagePreviews(prev => [...prev, ...newPreviews]);
-        setImageCleanupNeeded(true);
-        event.target.value = '';
+        if (validatedFiles.length > 0) {
+            appendImage(validatedFiles);
+            setImagePreviews(prev => [...prev, ...newPreviews]);
+            setImageCleanupNeeded(true);
+        }
+        event.target.value = ''; // Clear the input after processing
     };
 
     const removeNewImage = (index: number) => {
@@ -305,7 +553,8 @@ function EditListingPage() {
         if (!isVerified) return;
         const currentTotalImages = existingImageUrls.length + imagePreviews.length;
         const imagesMarkedForRemoval = imagesToRemove.includes(urlToRemove) ? imagesToRemove.length - 1 : imagesToRemove.length + 1;
-        if (currentTotalImages - imagesMarkedForRemoval < MIN_IMAGES) {
+        // Check if removing this image violates the minimum requirement
+        if ((existingImageUrls.length - (imagesToRemove.includes(urlToRemove) ? 0 : 1)) + imagePreviews.length < MIN_IMAGES) {
              toast({ variant: 'destructive', title: "Minimum Images Required", description: `You must keep at least ${MIN_IMAGES} images.` });
              return;
         }
@@ -381,7 +630,14 @@ function EditListingPage() {
         const newImageFiles = form.getValues("images") || [];
         const newVideoFile = form.getValues("video");
 
-        const updateData: Omit<EditListingFormValues, 'images' | 'video'> = { ...data };
+        // Ensure data passed to updateListing has correct types
+        const updateData: Omit<EditListingFormValues, 'images' | 'video'> = {
+             ...data,
+             price: String(data.price), // Ensure price is string
+             bedrooms: Number(data.bedrooms), // Ensure bedrooms is number
+             bathrooms: Number(data.bathrooms), // Ensure bathrooms is number
+        };
+
 
         const result = await updateListing(
             updateData,
@@ -419,7 +675,8 @@ function EditListingPage() {
         return <div className="container mx-auto flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 
-    if (!isVerified) {
+    // Display verification error state if not verified
+    if (!isVerified && !isFetchingData) { // Check after fetching attempt
         return (
              <div className="container mx-auto px-4 py-12 flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
                  <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6 self-start">
@@ -429,7 +686,7 @@ function EditListingPage() {
                   <ShieldAlert className="h-4 w-4" />
                   <AlertTitle>Account Not Verified</AlertTitle>
                   <AlertDescription>
-                    Your account needs to be verified to manage listings.
+                    Your account needs to be verified to manage listings. Please check your verification status on the dashboard.
                   </AlertDescription>
                    <Button variant="outline" size="sm" className="mt-4" onClick={() => router.push('/landlord/dashboard')}>
                         Go to Dashboard
@@ -554,6 +811,7 @@ function EditListingPage() {
                                                                 <SelectItem value="year">Per Year</SelectItem>
                                                                 <SelectItem value="month">Per Month</SelectItem>
                                                                 <SelectItem value="week">Per Week</SelectItem>
+                                                                <SelectItem value="daily">Per Day</SelectItem> {/* Added daily */}
                                                             </SelectContent>
                                                         </Select>
                                                      )}
@@ -807,4 +1065,3 @@ function EditListingPage() {
         </div>
     );
 }
-

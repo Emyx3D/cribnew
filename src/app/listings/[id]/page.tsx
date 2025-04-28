@@ -1,12 +1,13 @@
 
-'use client'; // Add 'use client' directive
 
-import React, { useState, useEffect, use } from 'react'; // Import React, useState, useEffect
+'use client';
+
+import React, { useState, useEffect, use } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff, ArrowLeft, Loader2, Video } from 'lucide-react'; // Added Video icon
+import { BedDouble, Bath, MapPin, Wallet, CheckCircle, MessageSquare, User, Phone, CalendarDays, Eye, EyeOff, ArrowLeft, Loader2, Video, Gamepad2 } from 'lucide-react'; // Added Gamepad2
 import Image from "next/image";
 import {
   AlertDialog,
@@ -18,15 +19,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // For inspection request (example)
-import Link from 'next/link'; // Import Link
-import { useToast } from '@/hooks/use-toast'; // Import toast
-import { useRouter } from 'next/navigation'; // Import router
+} from "@/components/ui/alert-dialog";
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 
 // Mock function to get listing data by ID - Replace with actual data fetching
 // Updated locations and image seeds for more realism
-async function getListingData(id: string): Promise<ListingData> {
+async function getListingData(id: string): Promise<ListingData | null> { // Added null return type
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -50,6 +51,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: "https://videos.pexels.com/video-files/857802/857802-hd_1280_720_25fps.mp4", // Sample video URL
         verified: true,
         amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
+        propertyType: "apartment", // Added propertyType
         landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
       },
       {
@@ -69,6 +71,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: null, // No video
         verified: true,
         amenities: ["Water Supply", "Prepaid Meter", "Tiled Floors"],
+        propertyType: "apartment", // Added propertyType
          landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
       },
         {
@@ -88,6 +91,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: null, // No video
         verified: false, // Example of unverified landlord
         amenities: ["Furnished", "Generator", "Air Conditioning"],
+        propertyType: "studio", // Added propertyType
          landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" }, // Phone might be hidden until verified
       },
        {
@@ -108,6 +112,7 @@ async function getListingData(id: string): Promise<ListingData> {
          videoUrl: "https://videos.pexels.com/video-files/5997169/5997169-hd_1280_720_30fps.mp4", // Sample video URL
         verified: true,
         amenities: ["Parking Space", "Water Heater", "Security", "Garden", "Gated Estate"],
+        propertyType: "duplex", // Added propertyType
          landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
       },
        {
@@ -126,6 +131,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: null,
         verified: true,
         amenities: ["Swimming Pool", "Gym", "Security", "Parking Space", "Water Heater"],
+        propertyType: "penthouse", // Added propertyType
         landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
       },
       {
@@ -143,6 +149,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: null,
         verified: true,
         amenities: ["Water Supply", "Tiled Floors"],
+        propertyType: "self-contain", // Added propertyType
         landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
       },
       {
@@ -159,7 +166,8 @@ async function getListingData(id: string): Promise<ListingData> {
         ],
         videoUrl: null,
         verified: true,
-        amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi"],
+        amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi", "PS5"], // Added PS5
+        propertyType: "airbnb", // Added propertyType
         landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
       },
       {
@@ -178,6 +186,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: "https://videos.pexels.com/video-files/855389/855389-hd_1280_720_25fps.mp4", // Sample video
         verified: true,
         amenities: ["Gated Estate", "Security", "Water Supply", "Prepaid Meter"],
+        propertyType: "terrace", // Added propertyType
         landlord: { id: "landlord_adekunle", name: "Mr. Adekunle Gold", verified: true, phone: "+2348012345678" },
       },
       {
@@ -196,6 +205,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: null,
         verified: true,
         amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security"],
+        propertyType: "airbnb", // Added propertyType
         landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
       },
       {
@@ -214,6 +224,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: null,
         verified: true,
         amenities: ["Garden", "Parking Space", "Water Supply"],
+        propertyType: "bungalow", // Added propertyType
         landlord: { id: "landlord_funke", name: "Mrs. Funke Akindele", verified: true, phone: "+2348098765432" },
       },
       {
@@ -228,6 +239,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: null,
         verified: false, // Unverified example
         amenities: ["Water Supply", "Prepaid Meter"],
+        propertyType: "self-contain", // Added propertyType
         landlord: { id: "landlord_bovi", name: "Mr. Bovi Ugboma", verified: false, phone: "+2347011223344" },
       },
       {
@@ -246,6 +258,7 @@ async function getListingData(id: string): Promise<ListingData> {
         videoUrl: "https://videos.pexels.com/video-files/5359829/5359829-hd_1920_1080_25fps.mp4", // Sample video
         verified: true,
         amenities: ["Gated Estate", "Security", "Swimming Pool", "Gym", "Generator", "Parking Space"],
+        propertyType: "duplex", // Added propertyType
         landlord: { id: "landlord_dangote", name: "Alhaji Dangote Properties", verified: true, phone: "+2348100000001" },
       },
       // Add the specific listing ID referenced in ManageListingsTable if needed
@@ -267,6 +280,7 @@ async function getListingData(id: string): Promise<ListingData> {
             verified: true, // Assuming landlord is verified
             status: 'active',
             amenities: ["Water Supply", "Electricity", "Security", "Parking Space", "Modern Kitchen"],
+            propertyType: "apartment", // Added propertyType
             landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" }, // Assuming landlord is verified
         },
         // Add another listing for testing links
@@ -286,6 +300,7 @@ async function getListingData(id: string): Promise<ListingData> {
              description: "Cozy and affordable flat in Yaba.",
              verified: true,
              amenities: ["Water Supply", "Prepaid Meter"],
+             propertyType: "apartment", // Added propertyType
              landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" }, // Assuming landlord is verified
         },
          // Add listings from FlaggedListingsTable for linking
@@ -302,6 +317,7 @@ async function getListingData(id: string): Promise<ListingData> {
             description: 'Ultra-luxury penthouse with amazing views and private pool.',
             verified: true, // Landlord might be verified even if listing is flagged
             amenities: ['Swimming Pool', 'Security', 'Parking Space', 'Gym'],
+            propertyType: "penthouse", // Added propertyType
             landlord: { id: 'landlord_bigshot', name: 'Mr. Big Shot', verified: true, phone: '+2349011112222' }
         },
         {
@@ -317,6 +333,7 @@ async function getListingData(id: string): Promise<ListingData> {
             description: 'Affordable studio apartment with basic amenities, close to the market.',
             verified: true,
             amenities: ['Water Supply', 'Tiled Floors'],
+            propertyType: "studio", // Added propertyType
             landlord: { id: 'landlord_reasonable', name: 'Mrs. Reasonable', verified: true, phone: '+2348033334444' }
         },
         {
@@ -332,8 +349,27 @@ async function getListingData(id: string): Promise<ListingData> {
             description: 'Spacious beachfront property, available for immediate rent. Great views!',
             verified: false, // Assume landlord verification might be pending or failed
             amenities: ['Beach Access', 'Balcony', 'Parking Space'],
+            propertyType: "duplex", // Assuming Villa maps to Duplex // Added propertyType
             landlord: { id: 'landlord_scamface', name: 'Shady McScamface', verified: false, phone: '+2347055556666' }
-        }
+        },
+         {
+            id: 13,
+            title: "Daily Rental Condo",
+            location: "Maitama, Abuja",
+            price: "₦50,000/day", // Daily price example
+            bedrooms: 1,
+            bathrooms: 1,
+            imageUrl: "https://picsum.photos/seed/maitama_condo_daily/800/600",
+            gallery: [
+                 "https://picsum.photos/seed/maitama_condo_daily/800/600",
+                 "https://picsum.photos/seed/maitama_condo_interior/800/600",
+            ],
+             videoUrl: null,
+            verified: true,
+            amenities: ["Furnished", "Air Conditioning", "Wifi", "PS5"], // Added PS5
+            propertyType: "airbnb",
+            landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
+        },
     ];
 
    // Find by string or number depending on how IDs are stored/passed
@@ -351,7 +387,6 @@ async function getListingData(id: string): Promise<ListingData> {
 
 
 interface ListingDetailPageProps {
-  // Keep `params` as the prop name expected by Next.js for dynamic routes
   params: { id: string };
 }
 
@@ -371,24 +406,23 @@ type ListingData = {
     videoUrl?: string | null; // Optional video URL
     verified: boolean;
     amenities: string[];
+    propertyType: string; // Added propertyType
     landlord: {
         id: string;
         name: string;
         verified: boolean;
         phone: string;
     };
-} | null; // Allow null if not found
+}; // Removed null allowance here, handle not found in component
 
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
-  // React.use() is intended for Server Components or specific hooks like `use`.
-  // For Client Components accessing route params, direct access or `useParams` (from 'next/navigation') inside the component is standard.
-  // The console warning is a forward-compatibility hint.
+  // Accessing params directly is supported but shows a warning in newer Next.js versions with App Router.
+  // Using `useParams` from 'next/navigation' is the recommended way in Client Components.
+  // However, for simplicity and given the current setup, direct access is used here.
+  // We'll handle potential undefined `params.id` within useEffect.
 
-  // Since this is a Client Component, we access params directly within useEffect
-  // or store it in state if needed outside useEffect.
-
-  const [listing, setListing] = useState<ListingData>(null);
+  const [listing, setListing] = useState<ListingData | null>(null); // Allow null state initially
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const { toast } = useToast();
@@ -397,13 +431,15 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
-     // Access params.id inside useEffect to avoid top-level access warning
-     // Direct access is still supported in this Next.js version, despite the warning.
+     // Access params.id inside useEffect to handle potential undefined
     const listingId = params.id;
     if (!listingId) {
         console.error("Listing ID is missing from params.");
         setIsLoading(false); // Stop loading if ID is missing
-        router.push('/404'); // Redirect to a 404 page
+        // Optionally redirect to a 404 page or listings page
+        // router.push('/404');
+        toast({ variant: 'destructive', title: "Error", description: "Invalid listing ID." });
+        router.push('/listings');
         return;
     }
 
@@ -413,19 +449,22 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
         if (data) {
             setListing(data);
         } else {
+            // Handle case where data is explicitly null (not found)
             console.error("Listing not found for ID:", listingId);
              toast({ variant: 'destructive', title: "Not Found", description: "Listing could not be found." });
-             router.push('/listings');
+             router.push('/listings'); // Redirect if not found
         }
       })
       .catch(err => {
         console.error("Failed to load listing data:", err);
          toast({ variant: 'destructive', title: "Error", description: "Failed to load listing details." });
+         // Optionally redirect on error
+         // router.push('/listings');
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, [params.id, router, toast]); // Correctly pass params.id
+  }, [params.id, router, toast]); // Dependency on params.id
 
 
   const handleRequestInspection = () => {
@@ -448,16 +487,13 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
 
   if (!listing) {
-    // Improved message for when listing is definitively not found after loading
-     // This state might be reached briefly before redirecting if toast/redirect logic is added above
+    // Render this specific message if loading finished but listing is still null
     return <div className="container mx-auto py-12 text-center">Listing not found or could not be loaded.</div>;
   }
 
   // Determine if the "Send Message" button should be enabled
-  // Requires user to be logged in as a tenant (example logic)
   let isTenantLoggedIn = false;
   try {
-     // Check if running in a browser environment before accessing sessionStorage
      if (typeof window !== 'undefined') {
        isTenantLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true' && sessionStorage.getItem('userRole') === 'tenant';
      }
@@ -534,7 +570,8 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                  <div className="flex flex-wrap gap-2 mb-6">
                     {listing.amenities.map(amenity => (
                         <Badge key={amenity} variant="secondary" className="px-3 py-1 text-sm">
-                           <CheckCircle className="w-4 h-4 mr-1 text-green-600"/> {amenity}
+                           {amenity === 'PS5' ? <Gamepad2 className="w-4 h-4 mr-1 text-purple-600"/> : <CheckCircle className="w-4 h-4 mr-1 text-green-600"/>}
+                           {amenity}
                         </Badge>
                     ))}
                  </div>

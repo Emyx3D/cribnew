@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video } from 'lucide-react';
+import { Loader2, UploadCloud, Trash2, Info, BedDouble, Bath, MapPin, Wallet, ShieldAlert, ArrowLeft, Video, Gamepad2 } from 'lucide-react'; // Added Gamepad2 for PS5
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -38,7 +39,8 @@ const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/qui
 const ALL_AMENITIES = [
     "Water Supply", "Electricity", "Security", "Parking Space",
     "Furnished", "Air Conditioning", "Tiled Floors", "Prepaid Meter",
-    "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool"
+    "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool",
+    "Wifi", "PS5", // Added Wifi and PS5
 ];
 
 const validateFile = (file: File | undefined | null, acceptedTypes: string[], maxSize: number, fieldName: string) => {
@@ -57,7 +59,7 @@ const listingFormSchema = z.object({
     bedrooms: z.coerce.number().min(1, 'Must have at least 1 bedroom.'),
     bathrooms: z.coerce.number().min(1, 'Must have at least 1 bathroom.'),
     price: z.string().min(1, 'Price is required.').regex(/^\d+$/, "Price must be a number."),
-    priceFrequency: z.enum(['year', 'month', 'week']),
+    priceFrequency: z.enum(['year', 'month', 'week', 'daily']), // Added 'daily'
     description: z.string().min(20, 'Description must be at least 20 characters.').max(1000, 'Description too long.'),
     amenities: z.array(z.string()).optional(),
     images: z.array(z.instanceof(File))
@@ -128,6 +130,7 @@ function NewListingPage() {
             }
         } catch (error) {
             console.error("Error checking verification status:", error);
+            setIsVerified(false); // Assume not verified if error
             router.push('/login');
         }
     }, [router, toast]);
@@ -142,7 +145,7 @@ function NewListingPage() {
             bedrooms: 1,
             bathrooms: 1,
             price: '',
-            priceFrequency: 'year',
+            priceFrequency: 'year', // Default to year
             description: '',
             amenities: [],
             images: [],
@@ -155,8 +158,10 @@ function NewListingPage() {
 
     useEffect(() => {
         let currentPreview = videoPreview; // Capture current preview URL
+        let url: string | null = null; // Define url here
+
         if (videoFieldValue instanceof File) {
-            const url = URL.createObjectURL(videoFieldValue);
+            url = URL.createObjectURL(videoFieldValue);
             setVideoPreview(url);
             setVideoFileName(videoFieldValue.name);
         } else {
@@ -166,19 +171,18 @@ function NewListingPage() {
 
         // Cleanup function
         return () => {
-             // Revoke the URL created in *this specific effect instance* when it's cleaned up
-             if (videoPreview && videoFieldValue instanceof File && videoPreview === URL.createObjectURL(videoFieldValue)) {
-                 // Be careful comparing object URLs directly, this logic might need refinement
-                 // A safer approach is often to revoke the previous URL if it exists *before* setting a new one.
-                 console.log("Cleaning up video preview URL on change/unmount:", videoPreview);
-                 URL.revokeObjectURL(videoPreview);
-             } else if (currentPreview && !(videoFieldValue instanceof File)) {
-                 // Cleanup if the field was cleared
-                 console.log("Cleaning up video preview URL on change/unmount (field cleared):", currentPreview);
-                 URL.revokeObjectURL(currentPreview);
-             }
+            // Always try to revoke the URL created in this effect instance if it exists
+            if (url) {
+                console.log("Cleaning up video preview URL on change/unmount:", url);
+                URL.revokeObjectURL(url);
+            }
+            // Also, revoke the previously captured URL if the field was cleared
+            else if (currentPreview && !(videoFieldValue instanceof File)) {
+                console.log("Cleaning up video preview URL on change/unmount (field cleared):", currentPreview);
+                URL.revokeObjectURL(currentPreview);
+            }
         };
-    }, [videoFieldValue]); // Removed videoPreview from dependencies
+    }, [videoFieldValue]); // Keep dependency array lean
 
 
     const { fields: imageFields, append: appendImage, remove: removeImageField } = useFieldArray({
@@ -191,13 +195,24 @@ function NewListingPage() {
         const files = Array.from(event.target.files || []);
         const currentImageCount = imageFields.length;
         const availableSlots = MAX_IMAGES - currentImageCount;
+
+        if (availableSlots <= 0) {
+             toast({
+                variant: 'destructive',
+                title: "Image Limit Reached",
+                description: `Maximum of ${MAX_IMAGES} images allowed.`,
+            });
+             event.target.value = ''; // Clear the input
+            return;
+        }
+
         const filesToAdd = files.slice(0, availableSlots);
 
         if (files.length > availableSlots) {
             toast({
                 variant: 'destructive',
                 title: "Image Limit Exceeded",
-                description: `You can only add ${availableSlots} more image(s). Maximum is ${MAX_IMAGES}.`,
+                description: `You can only add ${availableSlots} more image(s). ${files.length - filesToAdd.length} file(s) were not added.`,
             });
         }
 
@@ -212,12 +227,13 @@ function NewListingPage() {
              newPreviews.push(URL.createObjectURL(file));
         });
 
-        appendImage(validatedFiles);
-        setImagePreviews(prev => [...prev, ...newPreviews]);
-        setImageCleanupNeeded(true);
-        form.trigger("images");
-
-         event.target.value = '';
+        if (validatedFiles.length > 0) {
+            appendImage(validatedFiles);
+            setImagePreviews(prev => [...prev, ...newPreviews]);
+            setImageCleanupNeeded(true);
+            form.trigger("images"); // Trigger validation after appending
+        }
+        event.target.value = ''; // Clear the input after processing
     };
 
      const handleVideoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,7 +304,7 @@ function NewListingPage() {
             setVideoFileName(null);
             setImageCleanupNeeded(false);
             form.reset();
-            router.push(`/listings/${result.listingId}`);
+            router.push(`/listings/${result.listingId}`); // Redirect to the new listing page
         } else {
             toast({
                 variant: "destructive",
@@ -299,7 +315,7 @@ function NewListingPage() {
         }
     };
 
-    if (isVerified === null) {
+    if (isVerified === null) { // Show loader while checking verification status
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
@@ -459,6 +475,7 @@ function NewListingPage() {
                                                                 <SelectItem value="year">Per Year</SelectItem>
                                                                 <SelectItem value="month">Per Month</SelectItem>
                                                                 <SelectItem value="week">Per Week</SelectItem>
+                                                                <SelectItem value="daily">Per Day</SelectItem> {/* Added daily */}
                                                             </SelectContent>
                                                         </Select>
                                                      )}
@@ -524,7 +541,8 @@ function NewListingPage() {
                                                     />
                                                     </FormControl>
                                                     <FormLabel className="font-normal">
-                                                    {amenity}
+                                                        {amenity === "PS5" ? <Gamepad2 className="w-4 h-4 inline mr-1" /> : null}
+                                                        {amenity}
                                                     </FormLabel>
                                                 </FormItem>
                                                 )

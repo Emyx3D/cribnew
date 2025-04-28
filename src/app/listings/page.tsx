@@ -1,10 +1,11 @@
 
+
 'use client'; // Make this a client component to fetch ads and properties
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle, Search, XCircle, SlidersHorizontal } from 'lucide-react'; // Added SlidersHorizontal
+import { BedDouble, Bath, MapPin, Wallet, MessageSquare, Loader2, CheckCircle, Search, XCircle, SlidersHorizontal, Gamepad2 } from 'lucide-react'; // Added SlidersHorizontal, Gamepad2
 import Image from 'next/image';
 import Link from "next/link";
 import { FilterSidebar, FilterValues } from './_components/FilterSidebar'; // Import FilterValues type
@@ -29,13 +30,13 @@ type Listing = {
     id: number | string; // Allow string IDs
     title: string;
     location: string;
-    price: string; // String format like "₦3,500,000/year"
+    price: string; // String format like "₦3,500,000/year" or "₦50,000/day"
     bedrooms: number;
     bathrooms: number;
     imageUrl: string; // Cover image URL
     verified: boolean; // Landlord verified status
     amenities: string[];
-    propertyType: string; // e.g., "apartment", "duplex"
+    propertyType: string; // e.g., "apartment", "duplex", "airbnb"
     landlordId: string; // Added landlordId to link listings
 };
 
@@ -154,7 +155,7 @@ const allListings: Listing[] = [
     bathrooms: 1,
     imageUrl: "https://picsum.photos/seed/vi_shortlet_living/400/300",
     verified: true,
-    amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi"],
+    amenities: ["Furnished", "Air Conditioning", "Electricity", "Wifi", "PS5"], // Added PS5
     propertyType: "airbnb",
     landlordId: "landlord_adekunle", // Example reuse
   },
@@ -247,7 +248,7 @@ const allListings: Listing[] = [
         bathrooms: 2,
         imageUrl: "https://picsum.photos/seed/ph_shortlet_modern/400/300",
         verified: true,
-        amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security"],
+        amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security", "PS5"], // Added PS5
         propertyType: "airbnb",
         landlordId: "landlord_test",
     },
@@ -289,11 +290,24 @@ const allListings: Listing[] = [
         amenities: ["Gated Estate", "Security", "Swimming Pool", "Gym", "Generator", "Parking Space"],
         propertyType: "duplex",
         landlordId: "landlord_dangote",
-    }
+    },
+     {
+        id: 13,
+        title: "Daily Rental Condo",
+        location: "Maitama, Abuja",
+        price: "₦50,000/day", // Daily price example
+        bedrooms: 1,
+        bathrooms: 1,
+        imageUrl: "https://picsum.photos/seed/maitama_condo_daily/400/300",
+        verified: true,
+        amenities: ["Furnished", "Air Conditioning", "Wifi", "PS5"], // Added PS5
+        propertyType: "airbnb",
+        landlordId: "landlord_test",
+    },
 ];
 
 // Function to parse price string (e.g., "₦3,500,000/year") into numeric value and frequency
-const parsePrice = (priceString: string): { value: number; frequency: 'year' | 'month' | 'week' | 'unknown' } => {
+const parsePrice = (priceString: string): { value: number; frequency: 'year' | 'month' | 'week' | 'daily' | 'unknown' } => {
     const numericPart = priceString.replace(/[^0-9]/g, '');
     const value = parseInt(numericPart, 10);
 
@@ -308,17 +322,20 @@ const parsePrice = (priceString: string): { value: number; frequency: 'year' | '
         return { value, frequency: 'month' };
     } else if (lowerCaseString.includes('/week') || lowerCaseString.includes('/wk')) {
         return { value, frequency: 'week' };
+    } else if (lowerCaseString.includes('/day') || lowerCaseString.includes('/daily')) {
+        return { value, frequency: 'daily'};
     }
 
     return { value, frequency: 'year' }; // Default to yearly if frequency not specified
 };
 
 // Function to normalize price to a yearly equivalent for comparison (rough estimate)
-const normalizePriceToYearly = (value: number, frequency: 'year' | 'month' | 'week' | 'unknown'): number => {
+const normalizePriceToYearly = (value: number, frequency: 'year' | 'month' | 'week' | 'daily' | 'unknown'): number => {
     switch (frequency) {
         case 'year': return value;
         case 'month': return value * 12;
         case 'week': return value * 52;
+        case 'daily': return value * 365; // Approximate yearly cost for daily rentals
         default: return value; // Assume yearly if unknown
     }
 };
@@ -396,7 +413,11 @@ export default function ListingsPage() {
             if (filters.minPrice !== null || filters.maxPrice !== null) {
                 filtered = filtered.filter(listing => {
                     const { value, frequency } = parsePrice(listing.price);
-                    const normalizedPrice = normalizePriceToYearly(value, frequency); // Normalize to yearly for comparison
+                    // Normalize all prices to yearly equivalent for consistent range filtering
+                    // Note: This is a simplification. A better approach might involve filtering
+                    // based on the specific frequency if provided (e.g., filter daily prices if user selects daily range).
+                    // For now, we normalize to yearly for range checks.
+                    const normalizedPrice = normalizePriceToYearly(value, frequency);
 
                     const minMatch = filters.minPrice === null || isNaN(filters.minPrice) || normalizedPrice >= filters.minPrice;
                     const maxMatch = filters.maxPrice === null || isNaN(filters.maxPrice) || normalizedPrice <= filters.maxPrice;
@@ -558,7 +579,10 @@ export default function ListingsPage() {
                        </div>
                        <div className="flex flex-wrap gap-1">
                           {listing.amenities.slice(0, 3).map(amenity => ( // Show first 3 amenities
-                              <Badge key={amenity} variant="outline" className="text-xs">{amenity}</Badge>
+                              <Badge key={amenity} variant="outline" className="text-xs">
+                                  {amenity === 'PS5' ? <Gamepad2 className="w-3 h-3 inline mr-0.5 text-purple-600"/> : null}
+                                  {amenity}
+                              </Badge>
                           ))}
                            {listing.amenities.length > 3 && (
                                <Badge variant="outline" className="text-xs">+{listing.amenities.length - 3} more</Badge>

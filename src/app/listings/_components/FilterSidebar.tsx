@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { Search, Gamepad2 } from "lucide-react"; // Added Gamepad2
 import { cn } from "@/lib/utils";
 
 // Define reasonable limits for the slider, but inputs can go beyond
@@ -45,7 +46,8 @@ interface FilterSidebarProps {
 const ALL_AMENITIES = [
     "Water Supply", "Electricity", "Security", "Parking Space",
     "Furnished", "Air Conditioning", "Tiled Floors", "Prepaid Meter",
-    "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool"
+    "Generator", "Water Heater", "Gated Estate", "Garden", "Balcony", "Swimming Pool",
+    "Wifi", "PS5", // Added Wifi and PS5
 ];
 
 
@@ -205,7 +207,7 @@ export function FilterSidebar({ onApplyFilters, resetKey }: FilterSidebarProps) 
 
                 {/* Price Range Filter */}
                 <div className="space-y-3"> {/* Reduced spacing */}
-                   <Label className="text-xs">Price Range (₦/year)</Label> {/* Smaller label */}
+                   <Label className="text-xs">Price Range (₦/year - estimate)</Label> {/* Smaller label */}
                    {/* Display current slider range */}
                    <div className="flex justify-between text-xs text-muted-foreground">
                       <span>₦{SLIDER_MIN_PRICE.toLocaleString()}</span>
@@ -247,7 +249,7 @@ export function FilterSidebar({ onApplyFilters, resetKey }: FilterSidebarProps) 
                             />
                         </div>
                     </div>
-                     {/* TODO: Add frequency selector (Year/Month/Week) if needed */}
+                     {/* TODO: Add frequency selector (Year/Month/Week/Day) if needed */}
                 </div>
 
 
@@ -262,7 +264,8 @@ export function FilterSidebar({ onApplyFilters, resetKey }: FilterSidebarProps) 
                                     onCheckedChange={(checked) => handleAmenityChange(amenity, !!checked)}
                                     className="h-3.5 w-3.5" // Smaller checkbox
                                 />
-                                <Label htmlFor={amenity.replace(/\s+/g, '-').toLowerCase()} className="font-normal text-xs"> {/* Smaller label */}
+                                <Label htmlFor={amenity.replace(/\s+/g, '-').toLowerCase()} className="font-normal text-xs flex items-center gap-1"> {/* Smaller label, flex for icon */}
+                                    {amenity === "PS5" ? <Gamepad2 className="w-3.5 h-3.5 text-purple-600" /> : null}
                                     {amenity}
                                 </Label>
                             </div>
