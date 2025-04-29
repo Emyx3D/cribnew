@@ -579,8 +579,8 @@ export default function ListingsPage() {
                        </div>
                        <div className="flex flex-wrap gap-1">
                           {listing.amenities.slice(0, 3).map(amenity => ( // Show first 3 amenities
-                              <Badge key={amenity} variant="outline" className="text-xs">
-                                  {amenity === 'PS5' ? <Gamepad2 className="w-3 h-3 inline mr-0.5 text-purple-600"/> : null}
+                              <Badge key={amenity} variant="outline" className="text-xs flex items-center gap-0.5"> {/* Added flex/gap */}
+                                  {amenity === 'PS5' ? <Gamepad2 className="w-3 h-3 text-purple-600"/> : null}
                                   {amenity}
                               </Badge>
                           ))}

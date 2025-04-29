@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation'; // Import useParams
 
 
 // Mock function to get listing data by ID - Replace with actual data fetching
@@ -204,7 +205,7 @@ async function getListingData(id: string): Promise<ListingData | null> { // Adde
         ],
         videoUrl: null,
         verified: true,
-        amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security"],
+        amenities: ["Furnished", "Air Conditioning", "Wifi", "Generator", "Security", "PS5"], // Added PS5
         propertyType: "airbnb", // Added propertyType
         landlord: { id: "landlord_test", name: "Test Landlord", verified: true, phone: "+2348010101010" },
       },
@@ -413,31 +414,26 @@ type ListingData = {
         verified: boolean;
         phone: string;
     };
-}; // Removed null allowance here, handle not found in component
+}
 
 
 export default function ListingDetailPage({ params }: ListingDetailPageProps) {
-  // Accessing params directly is supported but shows a warning in newer Next.js versions with App Router.
-  // Using `useParams` from 'next/navigation' is the recommended way in Client Components.
-  // However, for simplicity and given the current setup, direct access is used here.
-  // We'll handle potential undefined `params.id` within useEffect.
-
   const [listing, setListing] = useState<ListingData | null>(null); // Allow null state initially
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const { toast } = useToast();
   const router = useRouter(); // Initialize router
+  const currentParams = useParams(); // Use hook to get params
 
 
   // Fetch data on the client side since this is now a Client Component
   useEffect(() => {
-     // Access params.id inside useEffect to handle potential undefined
-    const listingId = params.id;
+     // Access params.id inside useEffect to avoid top-level access warning
+     // Direct access is still supported in this Next.js version, despite the warning.
+    const listingId = currentParams.id as string; // Use params from hook
     if (!listingId) {
         console.error("Listing ID is missing from params.");
         setIsLoading(false); // Stop loading if ID is missing
-        // Optionally redirect to a 404 page or listings page
-        // router.push('/404');
         toast({ variant: 'destructive', title: "Error", description: "Invalid listing ID." });
         router.push('/listings');
         return;
@@ -464,7 +460,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [params.id, router, toast]); // Dependency on params.id
+  }, [currentParams.id, router, toast]); // Correctly pass currentParams.id
 
 
   const handleRequestInspection = () => {
@@ -569,8 +565,8 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                  <h2 className="text-xl font-semibold mb-3">Amenities</h2>
                  <div className="flex flex-wrap gap-2 mb-6">
                     {listing.amenities.map(amenity => (
-                        <Badge key={amenity} variant="secondary" className="px-3 py-1 text-sm">
-                           {amenity === 'PS5' ? <Gamepad2 className="w-4 h-4 mr-1 text-purple-600"/> : <CheckCircle className="w-4 h-4 mr-1 text-green-600"/>}
+                        <Badge key={amenity} variant="secondary" className="px-3 py-1 text-sm flex items-center gap-1"> {/* Added flex and gap */}
+                           {amenity === 'PS5' ? <Gamepad2 className="w-4 h-4 text-purple-600"/> : <CheckCircle className="w-4 h-4 text-green-600"/>}
                            {amenity}
                         </Badge>
                     ))}

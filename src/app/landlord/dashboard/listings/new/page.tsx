@@ -35,7 +35,7 @@ const MAX_IMAGES = 5;
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"]; // Added quicktime for .mov
 const ALL_AMENITIES = [
     "Water Supply", "Electricity", "Security", "Parking Space",
     "Furnished", "Air Conditioning", "Tiled Floors", "Prepaid Meter",
@@ -182,7 +182,7 @@ function NewListingPage() {
                 URL.revokeObjectURL(currentPreview);
             }
         };
-    }, [videoFieldValue]); // Keep dependency array lean
+    }, [videoFieldValue, videoPreview]); // Added videoPreview to dependency array
 
 
     const { fields: imageFields, append: appendImage, remove: removeImageField } = useFieldArray({
@@ -540,8 +540,8 @@ function NewListingPage() {
                                                          disabled={isLoading}
                                                     />
                                                     </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {amenity === "PS5" ? <Gamepad2 className="w-4 h-4 inline mr-1" /> : null}
+                                                    <FormLabel className="font-normal flex items-center gap-1"> {/* Added flex for icon */}
+                                                         {amenity === "PS5" ? <Gamepad2 className="w-4 h-4 inline mr-1" /> : null}
                                                         {amenity}
                                                     </FormLabel>
                                                 </FormItem>
