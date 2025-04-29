@@ -22,8 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { useParams } from 'next/navigation'; // Import useParams
+import { useRouter, useParams } from 'next/navigation'; // Import useParams
 
 
 // Mock function to get listing data by ID - Replace with actual data fetching
@@ -421,6 +420,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   const [listing, setListing] = useState<ListingData | null>(null); // Allow null state initially
   const [isLoading, setIsLoading] = useState(true);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null); // State for the main displayed image
   const { toast } = useToast();
   const router = useRouter(); // Initialize router
   const currentParams = useParams(); // Use hook to get params
@@ -430,7 +430,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   useEffect(() => {
      // Access params.id inside useEffect to avoid top-level access warning
      // Direct access is still supported in this Next.js version, despite the warning.
-    const listingId = currentParams.id as string; // Use params from hook
+     const listingId = currentParams.id as string;
     if (!listingId) {
         console.error("Listing ID is missing from params.");
         setIsLoading(false); // Stop loading if ID is missing
@@ -444,6 +444,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .then(data => {
         if (data) {
             setListing(data);
+            setMainImageUrl(data.imageUrl); // Initialize main image with the default imageUrl
         } else {
             // Handle case where data is explicitly null (not found)
             console.error("Listing not found for ID:", listingId);
@@ -460,7 +461,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [currentParams.id, router, toast]); // Correctly pass currentParams.id
+  }, [currentParams?.id, router, toast]); // Use currentParams.id from the hook
 
 
   const handleRequestInspection = () => {
@@ -470,6 +471,11 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
             title: "Inspection Requested",
             description: "Your request has been sent to the landlord. They will contact you.",
        });
+  };
+
+  // Function to handle clicking on gallery thumbnails
+  const handleThumbnailClick = (imageUrl: string) => {
+     setMainImageUrl(imageUrl);
   };
 
   if (isLoading) {
@@ -510,20 +516,22 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
         {/* Main Content (Image & Details) */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="overflow-hidden shadow-lg">
-             {/* Main Image */}
-             <Image
-                src={listing.imageUrl}
-                alt={listing.title}
-                width={800}
-                height={500}
-                className="w-full h-64 md:h-96 object-cover"
-                priority
-                unoptimized // Added for picsum consistency
-              />
+             {/* Main Image - Now dynamically updated */}
+              {mainImageUrl && (
+                 <Image
+                    src={mainImageUrl}
+                    alt={listing.title}
+                    width={800}
+                    height={500}
+                    className="w-full h-64 md:h-96 object-cover"
+                    priority
+                    unoptimized // Added for picsum consistency
+                 />
+              )}
              {/* Image Gallery */}
              {listing.gallery && listing.gallery.length > 1 && (
                  <div className="grid grid-cols-3 md:grid-cols-4 gap-2 p-4 border-t">
-                    {listing.gallery.slice(0, 4).map((imgUrl, index) => ( // Show first 4 gallery images
+                    {listing.gallery.map((imgUrl, index) => ( // Show first 4 gallery images
                          <Image
                             key={index}
                             src={imgUrl}
@@ -532,7 +540,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
                             height={150}
                             className="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                             unoptimized
-                            // TODO: Add onClick handler to open a lightbox/modal viewer
+                            onClick={() => handleThumbnailClick(imgUrl)} // Add onClick handler
                          />
                     ))}
                  </div>
