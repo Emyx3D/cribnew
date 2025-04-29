@@ -66,17 +66,7 @@ export function LocationAutocompleteInput<
     [autocompleteService, sessionToken]
   );
 
-  // Sync input value with react-hook-form's value on initial load or external changes
-  useEffect(() => {
-    const subscription = control.register(name, {});
-     // Get initial value from react-hook-form if it exists
-     const initialValue = control.getValues(name);
-     if (typeof initialValue === 'string') {
-         setInputValue(initialValue);
-     }
-    return () => subscription.unregister();
-  }, [control, name]);
-
+  // --- Removed incorrect useEffect for getting initial value ---
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -105,12 +95,18 @@ export function LocationAutocompleteInput<
       name={name}
       control={control}
       render={({ field: { onChange, onBlur, value, ref }, fieldState: { error } }) => {
-        // Ensure internal state matches form state if externally changed
+
+        // Sync input value with react-hook-form's value on initial load or external changes
         useEffect(() => {
-             if (typeof value === 'string' && value !== inputValue) {
-                 setInputValue(value);
-             }
-        }, [value]);
+          if (typeof value === 'string' && value !== inputValue) {
+             setInputValue(value);
+          }
+           // Handle case where form is reset or initial value is empty
+          if (value === '' && inputValue !== '') {
+               setInputValue('');
+           }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [value]); // Depend only on the form field's value
 
        return (
           <FormItem>
@@ -123,7 +119,10 @@ export function LocationAutocompleteInput<
                 {...{ ...ref, ref: inputRef }} // Merge refs
                 placeholder={placeholder}
                 value={inputValue} // Use internal state for display
-                onChange={handleInputChange} // Handle changes internally
+                onChange={(e) => {
+                    handleInputChange(e); // Update internal state and fetch predictions
+                    onChange(e.target.value); // Also update form state via Controller's onChange
+                }}
                 onBlur={onBlur} // Pass onBlur from react-hook-form
                 disabled={disabled}
                 className={error ? 'border-destructive' : ''}
